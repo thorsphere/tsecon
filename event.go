@@ -9,15 +9,15 @@ import "time" // time
 // EconomicEvent represents a single calendar event with its details.
 // Todo: Implement a separate package for country codes and use it here for better type safety and validation.
 type Event struct {
-	Name     string      // Name of the economic event, e.g., "Non-Farm Payrolls", "GDP Growth Rate"
-	Time     time.Time   // Date and time of the event
-	Country  string      // ISO 3166-1 alpha-2 two-letter country code
-	Actual   *float64    // Pointer, because it can be nil if the value is not yet released
-	Estimate *float64    // Pointer, because it can be nil if the value is not yet released
-	Previous *float64    // Pointer, because it can be nil if the value is not yet released
-	Unit     string      // Unit of measurement for the values, e.g., "%", "K", "M", "B"
-	Impact   ImpactLevel // Impact level of the event
-	Source   string      // Source of the data, e.g., "Bloomberg", "Reuters", "Official Government Website"
+	Name     string      `json:"name"`     // Name of the economic event, e.g., "Non-Farm Payrolls", "GDP Growth Rate"
+	Time     time.Time   `json:"date"`     // Date and time of the event in UTC, when the data is released or expected to be released
+	Country  string      `json:"country"`  // ISO 3166-1 alpha-2 two-letter country code
+	Actual   *float64    `json:"actual"`   // Pointer, because it can be nil if the value is not yet released
+	Estimate *float64    `json:"estimate"` // Pointer, because it can be nil if the value is not yet released
+	Previous *float64    `json:"previous"` // Pointer, because it can be nil if the value is not yet released
+	Unit     string      `json:"unit"`     // Unit of measurement for the values, e.g., "%", "K", "M", "B"
+	Impact   ImpactLevel `json:"impact"`   // Impact level of the event
+	Source   string      `json:"source"`   // Source of the data, e.g., "Bloomberg", "Reuters", "Official Government Website"
 }
 
 // String returns a formatted string representation of the Event.
