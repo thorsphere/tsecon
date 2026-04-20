@@ -3,11 +3,12 @@
 // that can be found in the LICENSE file.
 package tsecon
 
-// Import standard library packages and tserr
+// Import standard library packages, tsecon, tserr and tsfio
 import (
-	"context" // context
+	"context" // context for managing request-scoped values, cancellation signals, and deadlines
+	"strings" // strings for building output
 
-	"github.com/thorsphere/tserr" // tserr
+	"github.com/thorsphere/tserr" // tserr for custom error handling
 )
 
 // Provider defines the interface for fetching economic events from a data source.
@@ -40,10 +41,10 @@ func PrintEvents(events []Event) (string, error) {
 	if len(events) == 0 {
 		return "", tserr.Empty("events")
 	} else { // If there are events, iterate over each event and print its details using the String method of the Event struct.
-		out := ""
+		var out strings.Builder
 		for _, event := range events {
-			out += event.String() + "\n"
+			out.WriteString(event.String() + "\n")
 		}
-		return out, nil
+		return out.String(), nil
 	}
 }
