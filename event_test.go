@@ -5,6 +5,7 @@ package tsecon_test
 
 // Import standard library packages, tsecon, tsfio and tserr
 import (
+	"strings"
 	"testing" // testing
 	"time"    // time
 
@@ -19,9 +20,9 @@ var (
 		Name:     "Non-Farm Payrolls",
 		Time:     time.Date(2024, 7, 5, 8, 30, 0, 0, time.UTC),
 		Country:  "US",
-		Actual:   ptrFloat64(200),
-		Estimate: ptrFloat64(180),
-		Previous: ptrFloat64(150),
+		Actual:   new(200.0),
+		Estimate: new(180.0),
+		Previous: new(150.0),
 		Unit:     "K",
 		Impact:   tsecon.ImpactHigh,
 		Source:   "Bureau of Labor Statistics",
@@ -30,9 +31,9 @@ var (
 		Name:     "GDP Growth Rate",
 		Time:     time.Date(2024, 7, 10, 8, 30, 0, 0, time.UTC),
 		Country:  "US",
-		Actual:   ptrFloat64(3.5),
-		Estimate: ptrFloat64(3.0),
-		Previous: ptrFloat64(2.8),
+		Actual:   new(3.5),
+		Estimate: new(3.0),
+		Previous: new(2.8),
 		Unit:     "%",
 		Impact:   tsecon.ImpactMedium,
 		Source:   "Bureau of Economic Analysis",
@@ -61,22 +62,17 @@ var (
 	}
 )
 
-// Helper function to create a pointer to a float64 value
-func ptrFloat64(value float64) *float64 {
-	return &value
-}
-
 // TestEvents tests the String method of the Event struct by comparing the output to a golden file.
 func TestEvents(t *testing.T) {
 	// Create a formatted string representation of the sample events using the String method of the Event struct
-	out := ""
+	var out strings.Builder
 	// Iterate over each event in the sample events slice and append its string representation to the output string
 	for _, ev := range evs {
-		out += ev.String() + "\n"
+		out.WriteString(ev.String() + "\n")
 	}
 	// Compare the output to a golden file using the EvalGoldenFile function from the tsfio package,
 	// and if there is an error, fail the test with the error message
-	if e := tsfio.EvalGoldenFile(&tsfio.Testcase{Name: "events", Data: out}); e != nil {
+	if e := tsfio.EvalGoldenFile(&tsfio.Testcase{Name: "events", Data: out.String()}); e != nil {
 		t.Fatal(e)
 	}
 }
