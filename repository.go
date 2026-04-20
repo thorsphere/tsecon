@@ -32,8 +32,9 @@ const (
 		estimate REAL,
 		previous REAL,
 		unit TEXT,
-		impact TEXT,
-		source TEXT
+		impact INT,
+		source TEXT,
+        UNIQUE(event_time, country, name)
 	);`
 )
 
@@ -50,6 +51,106 @@ type EventRepository interface {
 type SQLiteEventRepository struct {
 	fn tsfio.Filename // The filename of the SQLite database file
 	db *sql.DB        // The database connection pool for interacting with the SQLite database
+}
+
+// GetByDate retrieves economic events that occurred on a specific date from the SQLiteEventRepository.
+// It checks for nil pointers and handles database queries and errors appropriately,
+// returning a slice of Event structs that match the specified date.
+func (r *SQLiteEventRepository) GetByDate(date time.Time) ([]Event, error) {
+	// Check if the repository instance is nil
+	if r == nil {
+		return nil, tserr.NilPtr()
+	}
+	// Check if the database connection is nil
+	if r.db == nil {
+		return nil, tserr.NilPtr()
+	}
+
+	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC)
+	endOfDay := startOfDay.AddDate(0, 0, 1).Add(-time.Nanosecond)
+
+	// Prepare the SQL statement for retrieving events by date
+	stmt := `
+    SELECT id, name, event_time, country, actual, estimate, previous, unit, impact, source
+    FROM economic_events
+    WHERE event_time >= ? AND event_time <= ?
+    `
+	// Execute the SQL statement with the date parameter
+	rows, err := r.db.Query(stmt, startOfDay.UTC().Format(time.RFC3339), endOfDay.UTC().Format(time.RFC3339))
+	// Handle any errors that occur while executing the query
+	if err != nil {
+		return nil, tserr.Op(&tserr.OpArgs{
+			Op:  "db.Query",
+			Err: err,
+		})
+	}
+
+	// Iterate over the rows returned by the query and scan the event details into Event structs.
+	var events []Event
+	for rows.Next() {
+		// Create a new Event struct to hold the details of the current row
+		var event Event
+		// Scan the columns of the current row into the fields of the Event struct
+		if err := rows.Scan(&event.ID, &event.Name, &event.Time, &event.Country, &event.Actual, &event.Estimate, &event.Previous, &event.Unit, &event.Impact, &event.Source); err != nil {
+			// If there is an error scanning the row, close the rows and return the error
+			rows.Close()
+			return nil, tserr.Op(&tserr.OpArgs{
+				Op:  "rows.Scan",
+				Err: err,
+			})
+		}
+		// Append the scanned event to the list of events to return
+		events = append(events, event)
+	}
+	// Check for any errors that occurred during iteration over the rows
+	if err := rows.Close(); err != nil {
+		return nil, tserr.Op(&tserr.OpArgs{
+			Op:  "rows.Close",
+			Err: err,
+		})
+	}
+	// Return the list of events that match the specified date and nil for the error
+	return events, nil
+}
+
+// Store saves a new economic event to the SQLiteEventRepository.
+// If an event with the same name, time, and country already exists,
+// it updates the existing record with the new details.
+func (r *SQLiteEventRepository) Store(event *Event) error {
+	// Check if the repository instance is nil
+	if r == nil {
+		return tserr.NilPtr()
+	}
+	// Check if the database connection is nil
+	if r.db == nil {
+		return tserr.NilPtr()
+	}
+	// Check if the event instance is nil
+	if event == nil {
+		return tserr.NilPtr()
+	}
+	// Prepare the SQL statement for inserting or updating an event
+	stmt := `
+    INSERT INTO economic_events (name, event_time, country, actual, estimate, previous, unit, impact, source)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(event_time, country, name) DO UPDATE SET
+        actual=excluded.actual,
+        estimate=excluded.estimate,
+        previous=excluded.previous,
+        unit=excluded.unit,
+        impact=excluded.impact,
+        source=excluded.source;
+    `
+	// Execute the SQL statement with the event details
+	_, err := r.db.Exec(stmt, event.Name, event.Time.UTC().Format(time.RFC3339), event.Country, event.Actual, event.Estimate, event.Previous, event.Unit, event.Impact, event.Source)
+	if err != nil {
+		return tserr.Op(&tserr.OpArgs{
+			Op:  "db.Exec",
+			Err: err,
+		})
+	}
+	// Return nil to indicate success
+	return nil
 }
 
 // Close closes the database connection of the SQLiteEventRepository.
