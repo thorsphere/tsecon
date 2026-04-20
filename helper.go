@@ -24,3 +24,17 @@ func fmtFloatPtr(value *float64) string {
 	// If the pointer is not nil, format the float value to two decimal places and return it as a string.
 	return fmt.Sprintf("%.1f", *value)
 }
+
+// floatPtrEqual is a helper function to compare two *float64 values, handling nil pointers gracefully.
+func floatPtrEqual(a, b *float64) bool {
+	// If both pointers are nil, they are considered equal
+	if a == nil && b == nil {
+		return true
+	}
+	// If one pointer is nil and the other is not, they are not equal
+	if a == nil || b == nil {
+		return false
+	}
+	// If both pointers are not nil, compare the values they point to
+	return *a == *b
+}
