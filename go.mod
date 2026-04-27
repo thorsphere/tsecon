@@ -4,6 +4,7 @@ go 1.26
 
 require (
 	github.com/ncruces/go-sqlite3 v0.33.3
+	github.com/thorsphere/lpstats v1.4.0
 	github.com/thorsphere/tserr v1.17.2
 	github.com/thorsphere/tsfio v1.8.0
 )

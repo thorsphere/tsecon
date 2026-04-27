@@ -3,17 +3,11 @@
 // that can be found in the LICENSE file.
 package tsecon
 
+/*
 // Import standard library packages
 import (
-	"fmt"  // fmt
-	"time" // time
+	"fmt" // fmt
 )
-
-// Period represents a time period with a start and end date.
-type Period struct {
-	From time.Time // Start date and time of the period
-	To   time.Time // End date and time of the period
-}
 
 // formatFloatPointer is a helper function to format *float64 values, handling nil pointers gracefully.
 func fmtFloatPtr(value *float64) string {
@@ -38,3 +32,4 @@ func floatPtrEqual(a, b *float64) bool {
 	// If both pointers are not nil, compare the values they point to
 	return *a == *b
 }
+*/

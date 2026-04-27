@@ -200,7 +200,7 @@ func TestStoreAndGetByDate(t *testing.T) {
 		}))
 	}
 	// Compare the retrieved event with the original event and check if they are equal
-	if !ev.Equal(events[0]) {
+	if !ev.NearEqual(events[0]) {
 		t.Fatal(tserr.EqualStr(&tserr.EqualStrArgs{
 			Var:    "events[0]",
 			Actual: events[0].String(),

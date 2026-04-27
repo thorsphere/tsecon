@@ -7,6 +7,8 @@ package tsecon
 import (
 	"fmt"  // fmt
 	"time" // time
+
+	"github.com/thorsphere/lpstats" // lpstats
 )
 
 // EconomicEvent represents a single calendar event with its details.
@@ -24,30 +26,37 @@ type Event struct {
 	Source   string      `json:"source"`   // Source of the data, e.g., "Bloomberg", "Reuters", "Official Government Website"
 }
 
+// Period represents a time period with a start and end date.
+type Period struct {
+	From time.Time // Start date and time of the period
+	To   time.Time // End date and time of the period
+}
+
 // String returns a formatted string representation of the Event.
 // Todo: Use tstable package to print as a table
 // Todo: Add a method to compare actual vs estimate and previous, and return a string indicating if it's better, worse, or as expected.
 // Todo: Add a helper function to print formatted *float64 values, handling nil pointers gracefully.
 func (ev Event) String() string {
 	t := fmt.Sprintf("%d: %s (%s) at %s - Impact: %s", ev.ID, ev.Name, ev.Country, ev.Time.Format(time.RFC3339), ev.Impact.String())
-	t += "\n  Actual: " + fmtFloatPtr(ev.Actual) + " " + ev.Unit
-	t += "\n  Estimate: " + fmtFloatPtr(ev.Estimate) + " " + ev.Unit
-	t += "\n  Previous: " + fmtFloatPtr(ev.Previous) + " " + ev.Unit
+	t += "\n  Actual: " + lpstats.FmtFloatPtr(ev.Actual) + " " + ev.Unit
+	t += "\n  Estimate: " + lpstats.FmtFloatPtr(ev.Estimate) + " " + ev.Unit
+	t += "\n  Previous: " + lpstats.FmtFloatPtr(ev.Previous) + " " + ev.Unit
 	t += "\n  Source: " + ev.Source
 	return t
 }
 
-// Equal compares two Event instances for equality, taking into account all fields including
+// NearEqual compares two Event instances for near-equality, taking into account all fields including
 // the pointer fields for Actual, Estimate, and Previous. It does not compare the ID field,
 // as it is expected to be set by the database and may not be the same for two events that are otherwise identical.
 // It returns true if all fields are equal, and false otherwise.
-func (ev Event) Equal(other Event) bool {
+func (ev Event) NearEqual(other Event) bool {
+	maxDiff := 0.001 // Define a maximum difference for comparing float values, adjust as needed
 	return ev.Name == other.Name &&
 		ev.Time.Equal(other.Time) &&
 		ev.Country == other.Country &&
-		floatPtrEqual(ev.Actual, other.Actual) &&
-		floatPtrEqual(ev.Estimate, other.Estimate) &&
-		floatPtrEqual(ev.Previous, other.Previous) &&
+		lpstats.NearEqualFloatPtr(ev.Actual, other.Actual, maxDiff) &&
+		lpstats.NearEqualFloatPtr(ev.Estimate, other.Estimate, maxDiff) &&
+		lpstats.NearEqualFloatPtr(ev.Previous, other.Previous, maxDiff) &&
 		ev.Unit == other.Unit &&
 		ev.Impact == other.Impact &&
 		ev.Source == other.Source

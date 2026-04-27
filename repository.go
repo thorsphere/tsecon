@@ -53,10 +53,10 @@ type SQLiteEventRepository struct {
 	db *sql.DB        // The database connection pool for interacting with the SQLite database
 }
 
-// GetByDate retrieves economic events that occurred on a specific date from the SQLiteEventRepository.
+// GetByPeriod retrieves economic events that occurred within a specified time period from the SQLiteEventRepository.
 // It checks for nil pointers and handles database queries and errors appropriately,
-// returning a slice of Event structs that match the specified date.
-func (r *SQLiteEventRepository) GetByDate(date time.Time) ([]Event, error) {
+// returning a slice of Event structs that match the specified time period.
+func (r *SQLiteEventRepository) GetByPeriod(period *Period) ([]Event, error) {
 	// Check if the repository instance is nil
 	if r == nil {
 		return nil, tserr.NilPtr()
@@ -66,17 +66,15 @@ func (r *SQLiteEventRepository) GetByDate(date time.Time) ([]Event, error) {
 		return nil, tserr.NilPtr()
 	}
 
-	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC)
-	endOfDay := startOfDay.AddDate(0, 0, 1).Add(-time.Nanosecond)
-
 	// Prepare the SQL statement for retrieving events by date
 	stmt := `
     SELECT id, name, event_time, country, actual, estimate, previous, unit, impact, source
     FROM economic_events
     WHERE event_time >= ? AND event_time <= ?
     `
+
 	// Execute the SQL statement with the date parameter
-	rows, err := r.db.Query(stmt, startOfDay.UTC().Format(time.RFC3339), endOfDay.UTC().Format(time.RFC3339))
+	rows, err := r.db.Query(stmt, period.From.UTC().Format(time.RFC3339), period.To.UTC().Format(time.RFC3339))
 	// Handle any errors that occur while executing the query
 	if err != nil {
 		return nil, tserr.Op(&tserr.OpArgs{
@@ -102,6 +100,7 @@ func (r *SQLiteEventRepository) GetByDate(date time.Time) ([]Event, error) {
 		// Append the scanned event to the list of events to return
 		events = append(events, event)
 	}
+
 	// Check for any errors that occurred during iteration over the rows
 	if err := rows.Close(); err != nil {
 		return nil, tserr.Op(&tserr.OpArgs{
@@ -109,8 +108,19 @@ func (r *SQLiteEventRepository) GetByDate(date time.Time) ([]Event, error) {
 			Err: err,
 		})
 	}
+
 	// Return the list of events that match the specified date and nil for the error
 	return events, nil
+}
+
+// GetByDate retrieves economic events that occurred on a specific date from the SQLiteEventRepository.
+// It checks for nil pointers and handles database queries and errors appropriately,
+// returning a slice of Event structs that match the specified date.
+func (r *SQLiteEventRepository) GetByDate(date time.Time) ([]Event, error) {
+	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC)
+	endOfDay := startOfDay.AddDate(0, 0, 1).Add(-time.Nanosecond)
+	period := &Period{From: startOfDay, To: endOfDay}
+	return r.GetByPeriod(period)
 }
 
 // Store saves a new economic event to the SQLiteEventRepository.
