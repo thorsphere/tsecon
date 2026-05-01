@@ -173,6 +173,87 @@ func TestNewSQLiteEventRepository(t *testing.T) {
 	rmDB(t, repo, fn)
 }
 
+// testGetByPeriod tests the GetByPeriod method of the SQLiteEventRepository.
+// It creates a temporary database, stores sample events, retrieves events by a defined period,
+// compares the retrieved events to a golden file, and then cleans up the temporary database and directory.
+// In case of any error during these steps, the execution stops and an error message is logged.
+func testGetByPeriod(t *testing.T, p *tsecon.Period) string {
+	// Create a new SQLiteEventRepository with the temporary directory
+	repo, fn := tmpDB(t)
+	// Iterate over each event in the sample events slice and store it in the repository,
+	// checking for errors during the storage process.
+	for _, ev := range evs {
+		// Store each event in the repository and check for errors
+		if err := repo.Store(&ev); err != nil {
+			t.Fatal(tserr.Op(&tserr.OpArgs{Op: "Store", Fn: string(fn), Err: err}))
+		}
+	}
+	// Retrieve events by the defined period
+	events, err := repo.GetByPeriod(p)
+	// Check for errors during the retrieval process, and if an error occurs, stop execution and log the error message.
+	if err != nil {
+		t.Fatal(tserr.Op(&tserr.OpArgs{Op: "GetByPeriod", Fn: string(fn), Err: err}))
+	}
+	// Remove the temporary database and directory
+	rmDB(t, repo, fn)
+	// Return the formatted string representation of the retrieved events
+	return tsecon.PrintEvents(events)
+}
+
+// TestGetByPeriod1 tests the GetByPeriod method of the SQLiteEventRepository by comparing the output to a golden file.
+func TestGetByPeriod1(t *testing.T) {
+	s := testGetByPeriod(t, per)
+	// Compare the output to a golden file using the EvalGoldenFile function from the tsfio package,
+	// and if there is an error, fail the test with the error message.
+	if err := tsfio.EvalGoldenFile(&tsfio.Testcase{Name: "getbyperiod", Data: s}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestGetByPeriod2 tests the GetByPeriod method of the SQLiteEventRepository with a period
+// that does not include any events, and expects an empty string as output.
+// If the output is not empty, the test fails.
+func TestGetByPeriod2(t *testing.T) {
+	// Define a period that does not include any of the sample events
+	p := &tsecon.Period{
+		From: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+		To:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+	}
+	// Call the testGetByPeriod function with the defined period and store the output in variable s
+	s := testGetByPeriod(t, p)
+	// Check if the output string s is not empty, which would indicate that events were retrieved
+	// when none were expected.
+	if s != "" {
+		t.Fatal(tserr.EqualStr(&tserr.EqualStrArgs{
+			Var:    "s",
+			Actual: s,
+			Want:   "",
+		}))
+	}
+}
+
+// TestGetByPeriod3 tests the GetByPeriod method of the SQLiteEventRepository with a period
+// that does not include any events, and expects an empty string as output.
+// If the output is not empty, the test fails.
+func TestGetByPeriod3(t *testing.T) {
+	// Define a period that does not include any of the sample events
+	p := &tsecon.Period{
+		From: time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+		To:   time.Date(2100, 12, 31, 23, 59, 59, 0, time.UTC),
+	}
+	// Call the testGetByPeriod function with the defined period and store the output in variable s
+	s := testGetByPeriod(t, p)
+	// Check if the output string s is not empty, which would indicate that events were retrieved
+	// when none were expected.
+	if s != "" {
+		t.Fatal(tserr.EqualStr(&tserr.EqualStrArgs{
+			Var:    "s",
+			Actual: s,
+			Want:   "",
+		}))
+	}
+}
+
 // TestStoreAndGetByDate tests the Store and GetByDate methods of the SQLiteEventRepository.
 // It creates a temporary database, stores a sample event, retrieves events by the date of the stored event,
 // checks if the retrieved events match the stored event, and then cleans up the temporary database and directory.

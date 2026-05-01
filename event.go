@@ -35,7 +35,6 @@ type Period struct {
 // String returns a formatted string representation of the Event.
 // Todo: Use tstable package to print as a table
 // Todo: Add a method to compare actual vs estimate and previous, and return a string indicating if it's better, worse, or as expected.
-// Todo: Add a helper function to print formatted *float64 values, handling nil pointers gracefully.
 func (ev Event) String() string {
 	t := fmt.Sprintf("%d: %s (%s) at %s - Impact: %s", ev.ID, ev.Name, ev.Country, ev.Time.Format(time.RFC3339), ev.Impact.String())
 	t += "\n  Actual: " + lpstats.FmtFloatPtr(ev.Actual) + " " + ev.Unit

@@ -80,11 +80,7 @@ func TestEvents(t *testing.T) {
 // TestPrintEvents tests the PrintEvents function by comparing its output to a golden file.
 func TestPrintEvents(t *testing.T) {
 	// Use the PrintEvents function to get a formatted string representation of the sample events
-	out, err := tsecon.PrintEvents(evs)
-	// If there is an error printing events, fail the test with the error message
-	if err != nil {
-		t.Fatal(err)
-	}
+	out := tsecon.PrintEvents(evs)
 	// Compare the output to a golden file using the EvalGoldenFile function from the tsfio package,
 	// and if there is an error, fail the test with the error message
 	if e := tsfio.EvalGoldenFile(&tsfio.Testcase{Name: "printevents", Data: out}); e != nil {
@@ -96,10 +92,10 @@ func TestPrintEvents(t *testing.T) {
 // expects an error indicating that there are no events to print.
 func TestPrintNoEvents(t *testing.T) {
 	// Use the PrintEvents function with an empty slice of events
-	_, err := tsecon.PrintEvents([]tsecon.Event{})
+	s := tsecon.PrintEvents([]tsecon.Event{})
 	// If there is an error printing events, fail the test with the error message
-	if err == nil {
-		t.Fatal(tserr.NilFailed("PrintEvents"))
+	if s != "" {
+		t.Fatal(tserr.EqualStr(&tserr.EqualStrArgs{Var: "PrintEvents", Actual: s, Want: ""}))
 	}
 }
 

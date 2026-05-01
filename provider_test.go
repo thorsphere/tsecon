@@ -56,11 +56,7 @@ func TestFetchEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Use the PrintEvents function to get a formatted string representation of the fetched events
-	out, err := tsecon.PrintEvents(events)
-	// If there is an error printing events, fail the test with the error message
-	if err != nil {
-		t.Fatal(err)
-	}
+	out := tsecon.PrintEvents(events)
 	// Compare the output to a golden file using the EvalGoldenFile function from the tsfio package,
 	// and if there is an error, fail the test with the error message
 	if e := tsfio.EvalGoldenFile(&tsfio.Testcase{Name: "fetchevents", Data: out}); e != nil {

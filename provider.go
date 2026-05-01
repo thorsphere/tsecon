@@ -36,15 +36,18 @@ func FetchEvents(ctx context.Context, p Provider, period *Period) ([]Event, erro
 }
 
 // PrintEvents prints the details of each event in the provided slice of events.
-func PrintEvents(events []Event) (string, error) {
-	// If there are no events, print a message indicating that no events were found for the specified period.
+// If the slice is nil or empty, it returns an empty string.
+// Otherwise, it builds a string representation of each event using the String method of the Event struct,
+// and returns the combined string.
+func PrintEvents(events []Event) string {
+	// If there are no events, return an empty string
 	if len(events) == 0 {
-		return "", tserr.Empty("events")
+		return ""
 	} else { // If there are events, iterate over each event and print its details using the String method of the Event struct.
 		var out strings.Builder
 		for _, event := range events {
 			out.WriteString(event.String() + "\n")
 		}
-		return out.String(), nil
+		return out.String()
 	}
 }
