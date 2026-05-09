@@ -36,6 +36,27 @@ const (
 		source TEXT,
         UNIQUE(event_time, country, name)
 	);`
+	// dbRetrieveEventQuery is the SQL query used to fetch economic events
+	// that fall within a specified start and end time boundary (inclusive).
+	dbRetrieveEventQuery = `
+    SELECT id, name, event_time, country, actual, estimate, previous, unit, impact, source
+    FROM economic_events
+    WHERE event_time >= ? AND event_time <= ?
+    `
+	// dbUpsertEventQuery is the SQL query used to insert a new economic event into the database.
+	// If an event with the exact same time, country, and name already exists, it performs an
+	// update (upsert) to refresh the varying fields like actual, estimate, and previous values.
+	dbUpsertEventQuery = `
+    INSERT INTO economic_events (name, event_time, country, actual, estimate, previous, unit, impact, source)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(event_time, country, name) DO UPDATE SET
+        actual=excluded.actual,
+        estimate=excluded.estimate,
+        previous=excluded.previous,
+        unit=excluded.unit,
+        impact=excluded.impact,
+        source=excluded.source;
+    `
 )
 
 // EventRepository defines the interface for managing economic events in a storage system.
@@ -65,16 +86,8 @@ func (r *SQLiteEventRepository) GetByPeriod(period *Period) ([]Event, error) {
 	if r.db == nil {
 		return nil, tserr.NilPtr()
 	}
-
-	// Prepare the SQL statement for retrieving events by date
-	stmt := `
-    SELECT id, name, event_time, country, actual, estimate, previous, unit, impact, source
-    FROM economic_events
-    WHERE event_time >= ? AND event_time <= ?
-    `
-
 	// Execute the SQL statement with the date parameter
-	rows, err := r.db.Query(stmt, period.From.UTC().Format(time.RFC3339), period.To.UTC().Format(time.RFC3339))
+	rows, err := r.db.Query(dbRetrieveEventQuery, period.From.UTC().Format(time.RFC3339), period.To.UTC().Format(time.RFC3339))
 	// Handle any errors that occur while executing the query
 	if err != nil {
 		return nil, tserr.Op(&tserr.OpArgs{
@@ -82,7 +95,6 @@ func (r *SQLiteEventRepository) GetByPeriod(period *Period) ([]Event, error) {
 			Err: err,
 		})
 	}
-
 	// Iterate over the rows returned by the query and scan the event details into Event structs.
 	var events []Event
 	for rows.Next() {
@@ -100,7 +112,6 @@ func (r *SQLiteEventRepository) GetByPeriod(period *Period) ([]Event, error) {
 		// Append the scanned event to the list of events to return
 		events = append(events, event)
 	}
-
 	// Check for any errors that occurred during iteration over the rows
 	if err := rows.Close(); err != nil {
 		return nil, tserr.Op(&tserr.OpArgs{
@@ -108,7 +119,6 @@ func (r *SQLiteEventRepository) GetByPeriod(period *Period) ([]Event, error) {
 			Err: err,
 		})
 	}
-
 	// Return the list of events that match the specified date and nil for the error
 	return events, nil
 }
@@ -139,20 +149,8 @@ func (r *SQLiteEventRepository) Store(event *Event) error {
 	if event == nil {
 		return tserr.NilPtr()
 	}
-	// Prepare the SQL statement for inserting or updating an event
-	stmt := `
-    INSERT INTO economic_events (name, event_time, country, actual, estimate, previous, unit, impact, source)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(event_time, country, name) DO UPDATE SET
-        actual=excluded.actual,
-        estimate=excluded.estimate,
-        previous=excluded.previous,
-        unit=excluded.unit,
-        impact=excluded.impact,
-        source=excluded.source;
-    `
 	// Execute the SQL statement with the event details
-	_, err := r.db.Exec(stmt, event.Name, event.Time.UTC().Format(time.RFC3339), event.Country, event.Actual, event.Estimate, event.Previous, event.Unit, event.Impact, event.Source)
+	_, err := r.db.Exec(dbUpsertEventQuery, event.Name, event.Time.UTC().Format(time.RFC3339), event.Country, event.Actual, event.Estimate, event.Previous, event.Unit, event.Impact, event.Source)
 	if err != nil {
 		return tserr.Op(&tserr.OpArgs{
 			Op:  "db.Exec",
