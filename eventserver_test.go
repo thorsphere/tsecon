@@ -5,63 +5,98 @@ package tsecon_test
 
 // Import standard library packages, tsecon and tserr
 import (
-	"bytes"
-	"context" // context
-	"encoding/json"
-	"net/http" // http
-	"testing"  // testing
-	"time"     // time
+	"bytes"             // context
+	"encoding/json"     // json
+	"net/http"          // http
+	"net/http/httptest" // httptest
+	"testing"           // testing
 
 	"github.com/thorsphere/tsecon" // tsecon
 	"github.com/thorsphere/tserr"  // tserr
 )
 
-func TestIngestHandler(t *testing.T) {
-	// Create a new SQLiteEventRepository with the temporary directory
+// setupTestServer starts the server and registers the teardown/cleanup automatically.
+// It returns the server URL and the initialized repository.
+func setupTestServer(t *testing.T) (string, tsecon.EventRepository) {
 	repo, fn := tmpDB(t)
-	// Create a new EventServer instance
 	server := tsecon.NewEventServer(repo)
-	// Create a channel to capture server errors
-	errChan := make(chan error, 1)
-	// Start the server in a separate goroutine
-	go func() {
-		if err := server.ListenAndServe(":8080"); err != nil && err != http.ErrServerClosed {
-			// Send the error to the error channel
-			errChan <- err
-		}
-	}()
-	// Give the server a small moment to bind to the port
-	time.Sleep(3000 * time.Millisecond)
-	// Create a channel to capture server errors
-	select {
-	case err := <-errChan: // If the server failed to start, report the error and fail the test
-		t.Fatal(tserr.Op(&tserr.OpArgs{Op: "server.ListenAndServe", Err: err}))
-	default:
-		payload, err := json.Marshal(evs)
-		if err != nil {
-			t.Fatal(tserr.Op(&tserr.OpArgs{Op: "json.Marshal", Fn: "events", Err: err}).Error())
-		}
-		// Perform an HTTP POST request to the server's ingest endpoint
-		resp, err := http.Post("http://localhost:8080/api/ingest", "application/json", bytes.NewBuffer(payload))
-		if err != nil {
-			t.Fatal(tserr.Op(&tserr.OpArgs{Op: "http.Post", Fn: "events", Err: err}).Error())
-		}
-		// Close the response body when the function exits
-		resp.Body.Close()
-		// Verify that the server responded with an HTTP 200 OK status
-		if resp.StatusCode != http.StatusOK {
-			t.Error(tserr.StatusNotMatching(&tserr.StatusNotMatchingArgs{Expected: http.StatusOK, Actual: resp.StatusCode}))
 
-		}
-		// Create a context with a timeout for the shutdown
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		// Defer the shutdown context
-		defer cancel()
-		// Close the server
-		if err := server.Shutdown(ctx); err != nil {
-			t.Fatal(tserr.Op(&tserr.OpArgs{Op: "server.Shutdown", Err: err}))
-		}
+	// httptest.NewServer automatically binds to a random free OS port (127.0.0.1:0)
+	// and starts the server immediately. No sleeps or error channels required!
+	ts := httptest.NewServer(server)
+
+	// Register automated cleanup. t.Cleanup runs automatically when the test using it finishes.
+	t.Cleanup(func() {
+		ts.Close() // Immediately shuts down the httptest server
+		rmDB(t, repo, fn)
+	})
+
+	// ts.URL contains the actual active URL with the random port (e.g., http://127.0.0.1:54932)
+	return ts.URL, repo
+}
+
+func TestIngestHandler(t *testing.T) {
+	// Setup test server and get the base URL for requests
+	baseURL, _ := setupTestServer(t)
+
+	// Prepare valid test data (using the same events as in TestEventRepository)
+	validPayloadBytes, err := json.Marshal(evs)
+	if err != nil {
+		t.Fatal(tserr.Op(&tserr.OpArgs{Op: "json.Marshal", Fn: "evs", Err: err}).Error())
 	}
-	// Remove the temporary database and directory
-	rmDB(t, repo, fn)
+	// Convert the byte slice to a string for use in the test cases
+	validPayload := string(validPayloadBytes)
+	// Define test cases for different scenarios
+	tests := []struct {
+		name           string
+		method         string
+		payload        string
+		expectedStatus int
+	}{
+		{
+			name:           "Valid Ingestion",
+			method:         http.MethodPost,
+			payload:        validPayload, // Use the valid JSON payload prepared above
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:   "Invalid JSON",
+			method: http.MethodPost,
+			// Missing closing bracket to make it invalid JSON
+			payload:        `[{"name": "GDP Growth", "date": 2024-07-10 }`,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "Wrong HTTP Method",
+			method:         http.MethodGet,
+			payload:        `[]`, // Empty array, but method is GET which is not allowed
+			expectedStatus: http.StatusMethodNotAllowed,
+		},
+	}
+	// Iterate over the test cases and execute them
+	for _, tc := range tests {
+		// Use t.Run to run each test case as a subtest, which provides better reporting and isolation.
+		t.Run(tc.name, func(t *testing.T) {
+			// Create a new HTTP request with the specified method, URL, and payload.
+			req, err := http.NewRequest(tc.method, baseURL+"/api/ingest", bytes.NewBufferString(tc.payload))
+			if err != nil {
+				// If there is an error creating the request, fail the test with a detailed error message.
+				t.Fatal(tserr.Op(&tserr.OpArgs{Op: "http.NewRequest", Fn: tc.name, Err: err}).Error())
+			}
+			// Set the Content-Type header to application/json since the payload is JSON.
+			req.Header.Set("Content-Type", "application/json")
+			// Send the HTTP request using the default HTTP client and capture the response.
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				// If there is an error sending the request, fail the test with a detailed error message.
+				t.Fatal(tserr.Op(&tserr.OpArgs{Op: "http.DefaultClient.Do", Fn: tc.name, Err: err}).Error())
+			}
+			// Defer the closing of the response body to ensure resources are freed after the test case is done.
+			defer resp.Body.Close()
+			// Check if the response status code matches the expected status code for the test case.
+			if resp.StatusCode != tc.expectedStatus {
+				t.Error(tserr.StatusNotMatching(&tserr.StatusNotMatchingArgs{Expected: tc.expectedStatus, Actual: resp.StatusCode}))
+			}
+		})
+	}
 }

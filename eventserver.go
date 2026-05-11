@@ -52,6 +52,13 @@ func (s *EventServer) Shutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
 
+// ServeHTTP makes EventServer implement the http.Handler interface,
+// allowing it to easily route incoming requests to its internal multiplexer.
+// This handles HTTP requests natively and is especially useful for testing.
+func (s *EventServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.server.Handler.ServeHTTP(w, r)
+}
+
 // IngestHandler handles incoming HTTP requests to ingest events.
 // It expects a POST request with a JSON body containing an array of events.
 // The handler decodes the JSON, stores each event in the repository,
