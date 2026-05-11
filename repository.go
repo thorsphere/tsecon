@@ -5,6 +5,7 @@ package tsecon
 
 // Import standard library packages and third-party packages for database/sql, time, and custom error handling and file I/O utilities.
 import (
+	"context"
 	"database/sql" // database/sql for interacting with the SQLite database
 	"time"         // time for handling event timestamps
 
@@ -61,10 +62,10 @@ const (
 
 // EventRepository defines the interface for managing economic events in a storage system.
 type EventRepository interface {
-	Store(event *Event) error                    // Store saves a new economic event to the repository. If it already exists, it should update the existing record.
-	GetByDate(date time.Time) ([]Event, error)   // GetByDate retrieves economic events that occurred on a specific date.
-	GetByPeriod(period *Period) ([]Event, error) // GetByPeriod retrieves economic events that occurred within a specified time period.
-	Close() error                                // Close releases any resources held by the repository, such as database connections.
+	Store(ctx context.Context, event *Event) error                    // Store saves a new economic event to the repository. If it already exists, it should update the existing record.
+	GetByDate(ctx context.Context, date time.Time) ([]Event, error)   // GetByDate retrieves economic events that occurred on a specific date.
+	GetByPeriod(ctx context.Context, period *Period) ([]Event, error) // GetByPeriod retrieves economic events that occurred within a specified time period.
+	Close() error                                                     // Close releases any resources held by the repository, such as database connections.
 }
 
 // SQLiteEventRepository is an implementation of the EventRepository interface
@@ -77,7 +78,7 @@ type SQLiteEventRepository struct {
 // GetByPeriod retrieves economic events that occurred within a specified time period from the SQLiteEventRepository.
 // It checks for nil pointers and handles database queries and errors appropriately,
 // returning a slice of Event structs that match the specified time period.
-func (r *SQLiteEventRepository) GetByPeriod(period *Period) ([]Event, error) {
+func (r *SQLiteEventRepository) GetByPeriod(ctx context.Context, period *Period) ([]Event, error) {
 	// Check if the repository instance is nil
 	if r == nil {
 		return nil, tserr.NilPtr()
@@ -87,7 +88,7 @@ func (r *SQLiteEventRepository) GetByPeriod(period *Period) ([]Event, error) {
 		return nil, tserr.NilPtr()
 	}
 	// Execute the SQL statement with the date parameter
-	rows, err := r.db.Query(dbRetrieveEventQuery, period.From.UTC().Format(time.RFC3339), period.To.UTC().Format(time.RFC3339))
+	rows, err := r.db.QueryContext(ctx, dbRetrieveEventQuery, period.From.UTC().Format(time.RFC3339), period.To.UTC().Format(time.RFC3339))
 	// Handle any errors that occur while executing the query
 	if err != nil {
 		return nil, tserr.Op(&tserr.OpArgs{
@@ -126,17 +127,20 @@ func (r *SQLiteEventRepository) GetByPeriod(period *Period) ([]Event, error) {
 // GetByDate retrieves economic events that occurred on a specific date from the SQLiteEventRepository.
 // It checks for nil pointers and handles database queries and errors appropriately,
 // returning a slice of Event structs that match the specified date.
-func (r *SQLiteEventRepository) GetByDate(date time.Time) ([]Event, error) {
+func (r *SQLiteEventRepository) GetByDate(ctx context.Context, date time.Time) ([]Event, error) {
+	// Calculate the start and end of the specified date to create a time period for querying the database.
 	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC)
 	endOfDay := startOfDay.AddDate(0, 0, 1).Add(-time.Nanosecond)
+	// Create a Period struct with the calculated start and end times for the specified date.
 	period := &Period{From: startOfDay, To: endOfDay}
-	return r.GetByPeriod(period)
+	// Call the GetByPeriod method to retrieve events that fall within the calculated time period for the specified date.
+	return r.GetByPeriod(ctx, period)
 }
 
 // Store saves a new economic event to the SQLiteEventRepository.
 // If an event with the same name, time, and country already exists,
 // it updates the existing record with the new details.
-func (r *SQLiteEventRepository) Store(event *Event) error {
+func (r *SQLiteEventRepository) Store(ctx context.Context, event *Event) error {
 	// Check if the repository instance is nil
 	if r == nil {
 		return tserr.NilPtr()
@@ -150,7 +154,7 @@ func (r *SQLiteEventRepository) Store(event *Event) error {
 		return tserr.NilPtr()
 	}
 	// Execute the SQL statement with the event details
-	_, err := r.db.Exec(dbUpsertEventQuery, event.Name, event.Time.UTC().Format(time.RFC3339), event.Country, event.Actual, event.Estimate, event.Previous, event.Unit, event.Impact, event.Source)
+	_, err := r.db.ExecContext(ctx, dbUpsertEventQuery, event.Name, event.Time.UTC().Format(time.RFC3339), event.Country, event.Actual, event.Estimate, event.Previous, event.Unit, event.Impact, event.Source)
 	if err != nil {
 		return tserr.Op(&tserr.OpArgs{
 			Op:  "db.Exec",

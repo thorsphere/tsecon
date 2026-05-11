@@ -6,7 +6,7 @@ package tsecon
 // Import necessary packages for JSON handling, HTTP server functionality,
 // and custom error and logging utilities from the thorsphere project.
 import (
-	"context"       // context
+	// context
 	"encoding/json" // json
 	"fmt"
 	"net/http" // http
@@ -18,52 +18,34 @@ import (
 
 // EventServer is a struct that represents the event server responsible for handling event ingestion.
 type EventServer struct {
-	repo   EventRepository
-	server *http.Server
+	repo EventRepository // EventRepository is an interface that defines methods for storing and retrieving events from a data source.
+	mux  *http.ServeMux  // HTTP request multiplexer to route incoming requests to the appropriate handlers
 }
 
 // NewEventServer creates a new instance of EventServer with the provided EventRepository.
 func NewEventServer(repo EventRepository) *EventServer {
-	// Initialize a new HTTP ServeMux to act as the request router.
-	mux := http.NewServeMux()
-	// Instantiate the EventServer with the injected EventRepository dependency.
-	s := &EventServer{repo: repo}
-	// Register the IngestHandler to process events at the "/api/ingest" endpoint.
-	mux.HandleFunc("/api/ingest", s.IngestHandler)
-	// Register the RetrieveHandler to fetch events at the "/api/events" endpoint.
-	mux.HandleFunc("/api/retrieve", s.RetrieveHandler)
-	// Initialize the embedded HTTP server with the configured request multiplexer.
-	s.server = &http.Server{Handler: mux}
+	// Create a mew EventServer instance with the provided repository and a new HTTP request multiplexer.
+	s := &EventServer{repo: repo, mux: http.NewServeMux()}
+	// Register the ingestHandler to process events at the "/api/ingest" endpoint.
+	s.mux.HandleFunc("/api/ingest", s.ingestHandler)
+	// Register the retrieveHandler to fetch events at the "/api/events" endpoint.
+	s.mux.HandleFunc("/api/retrieve", s.retrieveHandler)
 	// Return the fully configured EventServer instance, ready to be started.
 	return s
-}
-
-// ListenAndServe starts the HTTP server on the specified address.
-func (s *EventServer) ListenAndServe(addr string) error {
-	// Set the TCP network address (e.g., ":8080") on which the server should listen.
-	s.server.Addr = addr
-	// Start listening for incoming HTTP requests. This method is blocking and
-	// will run until the server is closed or encounters a fatal error.
-	return s.server.ListenAndServe()
-}
-
-// Shutdown gracefully shuts down the server, waiting for active connections to finish.
-func (s *EventServer) Shutdown(ctx context.Context) error {
-	return s.server.Shutdown(ctx)
 }
 
 // ServeHTTP makes EventServer implement the http.Handler interface,
 // allowing it to easily route incoming requests to its internal multiplexer.
 // This handles HTTP requests natively and is especially useful for testing.
 func (s *EventServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.server.Handler.ServeHTTP(w, r)
+	s.mux.ServeHTTP(w, r)
 }
 
-// IngestHandler handles incoming HTTP requests to ingest events.
+// ingestHandler handles incoming HTTP requests to ingest events.
 // It expects a POST request with a JSON body containing an array of events.
 // The handler decodes the JSON, stores each event in the repository,
 // and returns an appropriate HTTP response based on the success or failure of the operation.
-func (s *EventServer) IngestHandler(w http.ResponseWriter, r *http.Request) {
+func (s *EventServer) ingestHandler(w http.ResponseWriter, r *http.Request) {
 	// Only allow POST requests for event ingestion
 	if r.Method != http.MethodPost {
 		http.Error(w, tserr.MethodNotAllowed(&tserr.MethodNotAllowedArgs{Method: r.Method, Resource: "EventServer"}).Error(), http.StatusMethodNotAllowed)
@@ -83,8 +65,11 @@ func (s *EventServer) IngestHandler(w http.ResponseWriter, r *http.Request) {
 	for _, ev := range events {
 		// Attempt to store the event in the repository. If there is an error,
 		// log the error and continue with the next event.
-		if err := s.repo.Store(&ev); err != nil {
+		if err := s.repo.Store(r.Context(), &ev); err != nil {
 			tslog.Error(err)
+			// If there is an error storing the event, return a 500 Internal Server Error with a detailed error message.
+			http.Error(w, tserr.Op(&tserr.OpArgs{Op: "repo.Store", Fn: ev.Name, Err: err}).Error(), http.StatusInternalServerError)
+			return
 		}
 	}
 	// If all events are processed successfully, return a success response.
@@ -95,9 +80,9 @@ func (s *EventServer) IngestHandler(w http.ResponseWriter, r *http.Request) {
 	r.Body.Close()
 }
 
-// RetrieveHandler handles incoming HTTP GET requests to fetch events.
+// retrieveHandler handles incoming HTTP GET requests to fetch events.
 // It expects query parameters 'from' and 'to' in RFC3339 format.
-func (s *EventServer) RetrieveHandler(w http.ResponseWriter, r *http.Request) {
+func (s *EventServer) retrieveHandler(w http.ResponseWriter, r *http.Request) {
 	// Only allow GET requests for retrieving events
 	if r.Method != http.MethodGet {
 		http.Error(w, tserr.MethodNotAllowed(&tserr.MethodNotAllowedArgs{Method: r.Method, Resource: "EventServer"}).Error(), http.StatusMethodNotAllowed)
@@ -125,7 +110,7 @@ func (s *EventServer) RetrieveHandler(w http.ResponseWriter, r *http.Request) {
 		period = &Period{From: startOfDay, To: startOfDay.AddDate(0, 0, 1)}
 	}
 	// Fetch the economic events from the repository for the determined time period
-	events, err := s.repo.GetByPeriod(period)
+	events, err := s.repo.GetByPeriod(r.Context(), period)
 	// Handle any unexpected database or repository errors by returning a 500 status
 	if err != nil {
 		tslog.Error(err)

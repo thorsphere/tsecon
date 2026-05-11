@@ -5,10 +5,9 @@ package tsecon_test
 
 // Import standard library packages, tsecon, tsfio and tserr
 import (
-	// os for file and directory operations
-	// filepath for constructing file paths
+	"context" // context for handling request contexts
 	"testing" // testing for writing test cases
-	"time"
+	"time"    // time for handling event timestamps
 
 	"github.com/thorsphere/tsecon" // tsecon for the package being tested
 	"github.com/thorsphere/tserr"  // tserr for custom error handling
@@ -35,7 +34,7 @@ func TestGetByDateNil1(t *testing.T) {
 	// Test retrieving events by date from a nil SQLiteEventRepository
 	var repo *tsecon.SQLiteEventRepository = nil
 	// Attempt to retrieve events by date from the nil repository and check for the expected error
-	_, err := repo.GetByDate(time.Now().UTC())
+	_, err := repo.GetByDate(context.Background(), time.Now().UTC())
 	// Check if the error is not nil
 	if err == nil {
 		// If no error is returned, the test fails with a message indicating that a nil pointer was expected to fail.
@@ -65,7 +64,7 @@ func TestGetByDateNil2(t *testing.T) {
 	// Test retrieving events by date from a nil SQLiteEventRepository
 	var repo *tsecon.SQLiteEventRepository = &tsecon.SQLiteEventRepository{}
 	// Attempt to retrieve events by date from the nil repository and check for the expected error
-	_, err := repo.GetByDate(time.Now().UTC())
+	_, err := repo.GetByDate(context.Background(), time.Now().UTC())
 	// Check if the error is not nil
 	if err == nil {
 		// If no error is returned, the test fails with a message indicating that a nil pointer was expected to fail.
@@ -79,7 +78,7 @@ func TestStoreNil1(t *testing.T) {
 	// Test storing an event in a nil SQLiteEventRepository
 	var repo *tsecon.SQLiteEventRepository = nil
 	// Attempt to store an event in the nil repository and check for the expected error
-	if err := repo.Store(&evNfp); err == nil {
+	if err := repo.Store(context.Background(), &evNfp); err == nil {
 		// If no error is returned, the test fails with a message indicating that a nil pointer was expected to fail.
 		t.Fatal(tserr.NilFailed("Store"))
 	}
@@ -91,7 +90,7 @@ func TestStoreNil2(t *testing.T) {
 	// Test storing an event in a nil SQLiteEventRepository
 	var repo *tsecon.SQLiteEventRepository = &tsecon.SQLiteEventRepository{}
 	// Attempt to store an event in the repository with a db nil pointer and check for the expected error
-	if err := repo.Store(&evNfp); err == nil {
+	if err := repo.Store(context.Background(), &evNfp); err == nil {
 		// If no error is returned, the test fails with a message indicating that a nil pointer was expected to fail.
 		t.Fatal(tserr.NilFailed("Store"))
 	}
@@ -103,7 +102,7 @@ func TestStoreNil3(t *testing.T) {
 	// Create a new SQLiteEventRepository with the temporary directory
 	repo, fn := tmpDB(t)
 	// Attempt to store a nil event in the repository and check for the expected error
-	if err := repo.Store(nil); err == nil {
+	if err := repo.Store(context.Background(), nil); err == nil {
 		// If no error is returned, the test fails with a message indicating that a nil pointer was expected to fail.
 		t.Fatal(tserr.NilFailed("Store"))
 	}
@@ -134,12 +133,12 @@ func testGetByPeriod(t *testing.T, p *tsecon.Period) string {
 	// checking for errors during the storage process.
 	for _, ev := range evs {
 		// Store each event in the repository and check for errors
-		if err := repo.Store(&ev); err != nil {
+		if err := repo.Store(context.Background(), &ev); err != nil {
 			t.Fatal(tserr.Op(&tserr.OpArgs{Op: "Store", Fn: string(fn), Err: err}))
 		}
 	}
 	// Retrieve events by the defined period
-	events, err := repo.GetByPeriod(p)
+	events, err := repo.GetByPeriod(context.Background(), p)
 	// Check for errors during the retrieval process, and if an error occurs, stop execution and log the error message.
 	if err != nil {
 		t.Fatal(tserr.Op(&tserr.OpArgs{Op: "GetByPeriod", Fn: string(fn), Err: err}))
@@ -214,11 +213,11 @@ func TestStoreAndGetByDate(t *testing.T) {
 	// Define a sample event for testing purposes
 	ev := evGdp24
 	// Store a sample event in the repository
-	if err := repo.Store(&ev); err != nil {
+	if err := repo.Store(context.Background(), &ev); err != nil {
 		t.Fatal(tserr.Op(&tserr.OpArgs{Op: "Store", Fn: string(fn), Err: err}))
 	}
 	// Retrieve events by the date of the stored event
-	events, err := repo.GetByDate(ev.Time.UTC())
+	events, err := repo.GetByDate(context.Background(), ev.Time.UTC())
 	if err != nil {
 		t.Fatal(tserr.Op(&tserr.OpArgs{Op: "GetByDate", Fn: string(fn), Err: err}))
 	}
