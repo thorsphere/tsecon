@@ -16,22 +16,25 @@ import (
 	"github.com/thorsphere/tserr"  // tserr
 )
 
+const (
+	tok = "all-your-base-are-belong-to-us" // Dummy token for testing authentication
+)
+
 // setupTestServer starts the server and registers the teardown/cleanup automatically.
 // It returns the server URL and the initialized repository.
 func setupTestServer(t *testing.T) (string, tsecon.EventRepository) {
+	// Create a temporary database for testing.
 	repo, fn := tmpDB(t)
-	server := tsecon.NewEventServer(repo)
-
+	// Create a new EventServer instance with the initialized repository. The authentication token is not relevant for these tests, so we can use a dummy value.
+	server := tsecon.NewEventServer(repo, tok)
 	// httptest.NewServer automatically binds to a random free OS port (127.0.0.1:0)
 	// and starts the server immediately. No sleeps or error channels required!
 	ts := httptest.NewServer(server)
-
 	// Register automated cleanup. t.Cleanup runs automatically when the test using it finishes.
 	t.Cleanup(func() {
 		ts.Close() // Immediately shuts down the httptest server
 		rmDB(t, repo, fn)
 	})
-
 	// ts.URL contains the actual active URL with the random port (e.g., http://127.0.0.1:54932)
 	return ts.URL, repo
 }
@@ -52,25 +55,43 @@ func TestIngestHandler(t *testing.T) {
 		name           string
 		method         string
 		payload        string
+		authHeader     string
 		expectedStatus int
 	}{
 		{
 			name:           "Valid Ingestion",
 			method:         http.MethodPost,
 			payload:        validPayload, // Use the valid JSON payload prepared above
+			authHeader:     "Bearer " + tok,
 			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Unauthorized Access",
+			method:         http.MethodPost,
+			payload:        validPayload, // Payload is valid, but auth header is incorrect
+			authHeader:     "Bearer " + "totally-wrong-token",
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "Unauthorized Access (Missing token)",
+			method:         http.MethodPost,
+			payload:        validPayload, // Payload is valid, but auth header is incorrect
+			authHeader:     "",
+			expectedStatus: http.StatusUnauthorized,
 		},
 		{
 			name:   "Invalid JSON",
 			method: http.MethodPost,
 			// Missing closing bracket to make it invalid JSON
 			payload:        `[{"name": "GDP Growth", "date": 2024-07-10 }`,
+			authHeader:     "Bearer " + tok,
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:           "Wrong HTTP Method",
 			method:         http.MethodGet,
 			payload:        `[]`, // Empty array, but method is GET which is not allowed
+			authHeader:     "Bearer " + tok,
 			expectedStatus: http.StatusMethodNotAllowed,
 		},
 	}
@@ -86,6 +107,10 @@ func TestIngestHandler(t *testing.T) {
 			}
 			// Set the Content-Type header to application/json since the payload is JSON.
 			req.Header.Set("Content-Type", "application/json")
+			// Set the Authorization header if it's provided.
+			if tc.authHeader != "" {
+				req.Header.Set("Authorization", tc.authHeader)
+			}
 			// Send the HTTP request using the default HTTP client and capture the response.
 			resp, err := http.DefaultClient.Do(req)
 			if err != nil {
@@ -121,6 +146,7 @@ func TestRetrieveHandler(t *testing.T) {
 		name           string
 		method         string
 		endpoint       string
+		authHeader     string
 		expectedStatus int
 	}{
 		{
@@ -128,24 +154,35 @@ func TestRetrieveHandler(t *testing.T) {
 			method: http.MethodGet,
 			// Timeframe that encompasses evNfp and evGdp24 from the mock data
 			endpoint:       "/api/retrieve?from=2024-01-01T00:00:00Z&to=2025-12-31T23:59:59Z",
+			authHeader:     "Bearer " + tok,
 			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Unauthorized Access",
+			method:         http.MethodGet,
+			endpoint:       "/api/retrieve?from=2024-01-01T00:00:00Z&to=2025-12-31T23:59:59Z",
+			authHeader:     "Bearer " + "totally-wrong-token",
+			expectedStatus: http.StatusUnauthorized,
 		},
 		{
 			name:           "Missing timeframe (defaults to today)",
 			method:         http.MethodGet,
 			endpoint:       "/api/retrieve",
+			authHeader:     "Bearer " + tok,
 			expectedStatus: http.StatusOK, // Expected to succeed and return an empty map/null
 		},
 		{
 			name:           "Invalid timeframe format",
 			method:         http.MethodGet,
 			endpoint:       "/api/retrieve?from=not-a-date&to=also-not-a-date",
+			authHeader:     "Bearer " + tok,
 			expectedStatus: http.StatusBadRequest, // Invalid timestamps should result in a 400 Bad Request
 		},
 		{
 			name:           "Wrong HTTP Method",
 			method:         http.MethodPost,
 			endpoint:       "/api/retrieve?from=2024-01-01T00:00:00Z&to=2025-12-31T23:59:59Z",
+			authHeader:     "Bearer " + tok,
 			expectedStatus: http.StatusMethodNotAllowed, // POST is not allowed on the retrieve endpoint
 		},
 	}
@@ -160,7 +197,10 @@ func TestRetrieveHandler(t *testing.T) {
 				// If there is an error creating the request, fail the test with a detailed error message.
 				t.Fatal(tserr.Op(&tserr.OpArgs{Op: "http.NewRequest", Fn: tc.name, Err: err}).Error())
 			}
-
+			// Set the Authorization header if it's provided.
+			if tc.authHeader != "" {
+				req.Header.Set("Authorization", tc.authHeader)
+			}
 			// Send the HTTP request using the default HTTP client
 			resp, err := http.DefaultClient.Do(req)
 			if err != nil {

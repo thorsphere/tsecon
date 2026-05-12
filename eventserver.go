@@ -6,32 +6,50 @@ package tsecon
 // Import necessary packages for JSON handling, HTTP server functionality,
 // and custom error and logging utilities from the thorsphere project.
 import (
-	// context
-	"encoding/json" // json
-	"fmt"
-	"net/http" // http
-	"time"
+	"encoding/json" // encoding/json for JSON encoding and decoding
+	"fmt"           // fmt for string formatting
+	"net/http"      // net/http for HTTP server and client functionality
+	"time"          // time for handling timestamps and durations
 
-	"github.com/thorsphere/tserr" // tserr
-	"github.com/thorsphere/tslog" // tslog
+	"github.com/thorsphere/tserr" // tserr for custom error handling
+	"github.com/thorsphere/tslog" // tslog for logging utilities
 )
 
 // EventServer is a struct that represents the event server responsible for handling event ingestion.
 type EventServer struct {
 	repo EventRepository // EventRepository is an interface that defines methods for storing and retrieving events from a data source.
 	mux  *http.ServeMux  // HTTP request multiplexer to route incoming requests to the appropriate handlers
+	tok  string          // Authentication token for securing the API
 }
 
 // NewEventServer creates a new instance of EventServer with the provided EventRepository.
-func NewEventServer(repo EventRepository) *EventServer {
-	// Create a mew EventServer instance with the provided repository and a new HTTP request multiplexer.
-	s := &EventServer{repo: repo, mux: http.NewServeMux()}
+func NewEventServer(repo EventRepository, tok string) *EventServer {
+	// Initialize the EventServer struct with the provided repository and token, and set up the HTTP request multiplexer.
+	s := &EventServer{repo: repo, mux: http.NewServeMux(), tok: tok}
 	// Register the ingestHandler to process events at the "/api/ingest" endpoint.
-	s.mux.HandleFunc("/api/ingest", s.ingestHandler)
+	s.mux.HandleFunc("/api/ingest", s.requireAuth(s.ingestHandler))
 	// Register the retrieveHandler to fetch events at the "/api/events" endpoint.
-	s.mux.HandleFunc("/api/retrieve", s.retrieveHandler)
+	s.mux.HandleFunc("/api/retrieve", s.requireAuth(s.retrieveHandler))
 	// Return the fully configured EventServer instance, ready to be started.
 	return s
+}
+
+// requireAuth is a middleware function that wraps HTTP handlers to enforce authentication using a bearer token.
+// It checks the Authorization header of incoming requests against the expected token and returns a 401 Unauthorized response
+// if the token is invalid or missing.
+func (s *EventServer) requireAuth(next http.HandlerFunc) http.HandlerFunc {
+	// Return a new handler function that wraps the original handler with authentication logic.
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Construct the expected Authorization header value using the provided token.
+		expectedHeader := "Bearer " + s.tok
+		// Check if the incoming request's Authorization header matches the expected value.
+		if r.Header.Get("Authorization") != expectedHeader {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		// If the token is valid, call the next handler in the chain to process the request.
+		next(w, r)
+	}
 }
 
 // ServeHTTP makes EventServer implement the http.Handler interface,

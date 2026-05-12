@@ -36,6 +36,13 @@ func main() {
 	}
 	// Construct the server address by combining the host (empty string for all interfaces) and the port.
 	serverAddr := ":" + port
+	// Read API_TOKEN from environment for basic protection
+	tok := os.Getenv("API_TOKEN")
+	// If the API_TOKEN environment variable is not set, log a warning and use a default token for local development.
+	if tok == "" {
+		tslog.Warn("Environment variable 'API_TOKEN' is empty. Using default 'swordfish' for local development.")
+		tok = "swordfish"
+	}
 	// Initialize your repository.
 	repo, err := tsecon.NewSQLiteEventRepository(dbPath)
 	if err != nil {
@@ -44,7 +51,7 @@ func main() {
 		os.Exit(1)
 	}
 	// Create a new EventServer instance with the initialized repository.
-	api := tsecon.NewEventServer(repo)
+	api := tsecon.NewEventServer(repo, tok)
 	// Configure the HTTP server with the EventServer as the handler, and set reasonable timeouts for read and write operations.
 	srv := &http.Server{
 		Addr:         serverAddr,
