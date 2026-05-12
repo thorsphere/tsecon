@@ -22,18 +22,24 @@ import (
 const (
 	// Define the path to the SQLite database file. This constant can be modified to point to a different location or filename as needed.
 	dbPath = "events.db"
-	// Define the address and port on which the EventServer will listen for incoming HTTP requests.
-	// This can be changed to use a different port or bind to a specific IP address.
-	serverAddr = ":8080"
 )
 
 // The main function serves as the entry point for the application.
 // It initializes the event repository, starts the event server,
 // and handles graceful shutdown on interrupt signals.
 func main() {
+	// Define the address and port on which the EventServer will listen for incoming HTTP requests.
+	// Let Cloud Run decide the port, fallback to 8080 for local development
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	// Construct the server address by combining the host (empty string for all interfaces) and the port.
+	serverAddr := ":" + port
 	// Initialize your repository.
 	repo, err := tsecon.NewSQLiteEventRepository(dbPath)
 	if err != nil {
+		// Log the error using tslog and exit the application with a non-zero status code to indicate failure.
 		tslog.Error(tserr.Op(&tserr.OpArgs{Op: "New SQLite Event Repository", Fn: dbPath, Err: err}))
 		os.Exit(1)
 	}
