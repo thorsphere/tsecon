@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+# Exit immediately if a command exits with a non-zero status
+set -euo pipefail
+
+# 1. CONFIGURATION
+PROJECT_ID="YOUR_STAGING_PROJECT_ID"
+REGION="YOUR_STAGING_PROJECT_REGION"
+SERVICE_NAME="YOUR_SERVICE_NAME"
+API_BEARER_KEY="${API_BEARER_KEY:-your-super-secret-api-token}" 
+
+echo "Starting deployment for '$SERVICE_NAME' in region '$REGION'..."
+
+# 2. DEPLOYMENT
+gcloud run deploy "$SERVICE_NAME" \
+  --source . \
+  --region "$REGION" \
+  --project "$PROJECT_ID" \
+  --allow-unauthenticated \
+  --set-env-vars="PROJECT_ID=$PROJECT_ID,API_TOKEN=$API_BEARER_KEY"
+
+echo "Fetching final service URL..."
+# Using the grep/awk workaround to safely extract the URL
+SERVICE_URL=$(gcloud run services describe "$SERVICE_NAME" \
+  --region "$REGION" \
+  --project "$PROJECT_ID" \
+  | grep -E "^URL:" | awk '{print $2}')
+
+echo -e "\n✅ Deployment successful! Service URL is: $SERVICE_URL\n"
+
+# 3. NEXT STEPS
+echo "To run the smoke test against this deployment, use the following command:"
+echo "export API_BEARER_KEY=\"$API_BEARER_KEY\""
+echo "./smoke_test.sh.example \"$SERVICE_URL\""

@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+
+# Exit immediately if a command exits with a non-zero status
+set -euo pipefail
+
+# Check if jq is installed (required for JSON validation)
+if ! command -v jq &> /dev/null; then
+    echo "❌ Error: 'jq' is not installed. Please install it to run this script."
+    exit 1
+fi
+
+# Ensure a URL was passed as an argument
+if [ "$#" -lt 1 ]; then
+    echo "Usage: $0 <SERVICE_URL>"
+    echo "Example: $0 https://eventserver-12345.us-east4.run.app"
+    echo "Local:   $0 http://localhost:8080"
+    exit 1
+fi
+
+# Strip trailing slash from URL if present (e.g. from copy-pasting)
+SERVICE_URL="${1%/}"
+API_BEARER_KEY="${API_BEARER_KEY:-your-super-secret-api-token}" 
+
+echo -e "Testing against Service URL: $SERVICE_URL\n"
+
+# 1. SMOKE TEST: POST (Ingest)
+echo "Testing API: POST /api/ingest..."
+POST_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$SERVICE_URL/api/ingest" \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer $API_BEARER_KEY" \
+     -d '[
+           {
+             "name": "US Core Inflation Rate",
+             "date": "2026-05-15T12:30:00Z",
+             "country": "US",
+             "actual": 3.1,
+             "estimate": 3.2,
+             "previous": 3.3,
+             "unit": "%",
+             "impact": 3,
+             "source": "US Bureau of Labor Statistics"
+           }
+         ]')
+
+if [ "$POST_STATUS" -eq 200 ] || [ "$POST_STATUS" -eq 201 ]; then
+    echo "   ↳ Success! HTTP Status: $POST_STATUS"
+else
+    echo "   ↳ ❌ Failed! HTTP Status: $POST_STATUS"
+    exit 1
+fi
+
+# 2. SMOKE TEST: GET (Retrieve)
+echo -e "\nTesting API: GET /api/retrieve..."
+RESPONSE=$(curl -s -X GET "$SERVICE_URL/api/retrieve?from=2026-05-01T00:00:00Z&to=2026-05-31T23:59:59Z" \
+     -H "Authorization: Bearer $API_BEARER_KEY")
+
+# Verify if valid JSON is returned AND that the array is not empty
+if echo "$RESPONSE" | jq -e 'length > 0' > /dev/null 2>&1; then
+    echo "$RESPONSE" | jq .
+    echo -e "\nSmoke test passed completely!"
+else
+    echo "❌ API did not return valid JSON or the event array was empty!"
+    echo "Response was: $RESPONSE"
+    exit 1
+fi
