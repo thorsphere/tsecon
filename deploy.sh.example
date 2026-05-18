@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# Copyright (c) 2026 thorsphere.
+# All Rights Reserved. Use is governed with GNU Affero General Public License v3.0
+# that can be found in the LICENSE file.
+
 # Exit immediately if a command exits with a non-zero status
 set -euo pipefail
 
@@ -17,7 +21,7 @@ gcloud run deploy "$SERVICE_NAME" \
   --region "$REGION" \
   --project "$PROJECT_ID" \
   --allow-unauthenticated \
-  --set-env-vars="PROJECT_ID=$PROJECT_ID,API_TOKEN=$API_BEARER_KEY"
+  --set-env-vars="GOOGLE_CLOUD_PROJECT=$PROJECT_ID,API_TOKEN=$API_BEARER_KEY"
 
 echo "Fetching final service URL..."
 # Using the grep/awk workaround to safely extract the URL

@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# Copyright (c) 2026 thorsphere.
+# All Rights Reserved. Use is governed with GNU Affero General Public License v3.0
+# that can be found in the LICENSE file.
+
 # Exit immediately if a command exits with a non-zero status
 set -euo pipefail
 
@@ -31,7 +35,7 @@ POST_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$SERVICE_URL/api/i
      -d '[
            {
              "name": "US Core Inflation Rate",
-             "date": "2026-05-15T12:30:00Z",
+             "time": "2026-05-15T12:30:00Z",
              "country": "US",
              "actual": 3.1,
              "estimate": 3.2,
