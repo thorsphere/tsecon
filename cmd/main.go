@@ -43,15 +43,33 @@ func main() {
 		tslog.Warn("Environment variable 'API_TOKEN' is empty. Using default 'swordfish' for local development.")
 		tok = "swordfish"
 	}
-	// Initialize your repository.
-	repo, err := tsecon.NewSQLiteEventRepository(dbPath)
+	// Initialize your repository based on the environment.
+	var repo tsecon.EventRepository
+	var err error
+	// Check if GOOGLE_CLOUD_PROJECT is set to determine if we are running in Google Cloud and should use Firestore.
+	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
+	// If GOOGLE_CLOUD_PROJECT is set, we assume we are running in Google Cloud and use Firestore.
+	// Otherwise, we fall back to the local SQLite database.
+	// This allows the application to run seamlessly in both local development and production environments
+	// without requiring code changes.
+	if projectID != "" {
+		// If GOOGLE_CLOUD_PROJECT is set, assume we are in Google Cloud and use Firestore
+		tslog.Info(fmt.Sprintf("GOOGLE_CLOUD_PROJECT is set (%s). Initializing FirestoreEventRepository.", projectID))
+		repo, err = tsecon.NewFirestoreEventRepository(context.Background(), projectID)
+	} else {
+		// Otherwise, fallback to the local SQLite database
+		tslog.Info("GOOGLE_CLOUD_PROJECT is not set. Falling back to local SQLiteEventRepository.")
+		repo, err = tsecon.NewSQLiteEventRepository(dbPath)
+	}
+	// If there was an error initializing the repository, log the error and exit the application with a non-zero status code to indicate failure.
 	if err != nil {
 		// Log the error using tslog and exit the application with a non-zero status code to indicate failure.
-		tslog.Error(tserr.Op(&tserr.OpArgs{Op: "New SQLite Event Repository", Fn: dbPath, Err: err}))
+		tslog.Error(tserr.Op(&tserr.OpArgs{Op: "Initialize Event Repository", Fn: "main", Err: err}))
 		os.Exit(1)
 	}
 	// Create a new EventServer instance with the initialized repository.
 	api := tsecon.NewEventServer(repo, tok)
+
 	// Configure the HTTP server with the EventServer as the handler, and set reasonable timeouts for read and write operations.
 	srv := &http.Server{
 		Addr:         serverAddr,
