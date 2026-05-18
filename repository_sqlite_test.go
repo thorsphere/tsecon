@@ -28,20 +28,6 @@ func TestCloseNil1(t *testing.T) {
 	}
 }
 
-// TestGetByDateNil1 tests the GetByDate method of the SQLiteEventRepository when called on a nil pointer.
-// It expects an error to be returned, and if no error is returned, the test fails.
-func TestGetByDateNil1(t *testing.T) {
-	// Test retrieving events by date from a nil SQLiteEventRepository
-	var repo *tsecon.SQLiteEventRepository = nil
-	// Attempt to retrieve events by date from the nil repository and check for the expected error
-	_, err := repo.GetByDate(context.Background(), time.Now().UTC())
-	// Check if the error is not nil
-	if err == nil {
-		// If no error is returned, the test fails with a message indicating that a nil pointer was expected to fail.
-		t.Fatal(tserr.NilFailed("GetByDate"))
-	}
-}
-
 // TestCloseNil2 tests the Close method of the SQLiteEventRepository
 // when called on a non-nil pointer that has not been initialized.
 // It expects an error to be returned, and if no error is returned, the test fails.
@@ -54,21 +40,6 @@ func TestCloseNil2(t *testing.T) {
 	if err == nil {
 		// If no error is returned, the test fails with a message indicating that a nil pointer was expected to fail.
 		t.Fatal(tserr.NilFailed("Close"))
-	}
-}
-
-// TestGetByDateNil2 tests the GetByDate method of the SQLiteEventRepository
-// when called on a non-nil pointer that has not been initialized.
-// It expects an error to be returned, and if no error is returned, the test fails.
-func TestGetByDateNil2(t *testing.T) {
-	// Test retrieving events by date from a nil SQLiteEventRepository
-	var repo *tsecon.SQLiteEventRepository = &tsecon.SQLiteEventRepository{}
-	// Attempt to retrieve events by date from the nil repository and check for the expected error
-	_, err := repo.GetByDate(context.Background(), time.Now().UTC())
-	// Check if the error is not nil
-	if err == nil {
-		// If no error is returned, the test fails with a message indicating that a nil pointer was expected to fail.
-		t.Fatal(tserr.NilFailed("GetByDate"))
 	}
 }
 
@@ -203,6 +174,33 @@ func TestGetByPeriod3(t *testing.T) {
 	}
 }
 
+// TestGetByPeriodNil1 tests the GetByPeriod method of the SQLiteEventRepository when called on a nil pointer.
+// It expects an error to be returned, and if no error is returned, the test fails.
+func TestGetByPeriodNil1(t *testing.T) {
+	// Test GetByPeriod with a nil SQLiteEventRepository
+	var repo *tsecon.SQLiteEventRepository = nil
+	// Attempt to retrieve events with a nil repository and check for the expected error
+	_, err := repo.GetByPeriod(context.Background(), per)
+	// Check if the error is not nil
+	if err == nil {
+		t.Fatal(tserr.NilFailed("GetByPeriod"))
+	}
+}
+
+// TestGetByPeriodNil2 tests the GetByPeriod method of the SQLiteEventRepository
+// when called on a non-nil pointer that has not been initialized.
+// It expects an error to be returned, and if no error is returned, the test fails.
+func TestGetByPeriodNil2(t *testing.T) {
+	// Test GetByPeriod with a SQLiteEventRepository that has a nil db pointer
+	repo := new(tsecon.SQLiteEventRepository)
+	// Attempt to retrieve events with a repository that has a nil db pointer and check for the expected error
+	_, err := repo.GetByPeriod(context.Background(), per)
+	// Check if the error is not nil
+	if err == nil {
+		t.Fatal(tserr.NilFailed("GetByPeriod"))
+	}
+}
+
 // TestStoreAndGetByDate tests the Store and GetByDate methods of the SQLiteEventRepository.
 // It creates a temporary database, stores a sample event, retrieves events by the date of the stored event,
 // checks if the retrieved events match the stored event, and then cleans up the temporary database and directory.
@@ -217,9 +215,10 @@ func TestStoreAndGetByDate(t *testing.T) {
 		t.Fatal(tserr.Op(&tserr.OpArgs{Op: "Store", Fn: string(fn), Err: err}))
 	}
 	// Retrieve events by the date of the stored event
-	events, err := repo.GetByDate(context.Background(), ev.Time.UTC())
+	period := tsecon.NewPeriodForDate(ev.Time)
+	events, err := repo.GetByPeriod(context.Background(), period)
 	if err != nil {
-		t.Fatal(tserr.Op(&tserr.OpArgs{Op: "GetByDate", Fn: string(fn), Err: err}))
+		t.Fatal(tserr.Op(&tserr.OpArgs{Op: "GetByPeriod", Fn: string(fn), Err: err}))
 	}
 	// Check if the retrieved events match the stored event
 	if len(events) != 1 {
