@@ -3,9 +3,10 @@
 // that can be found in the LICENSE file.
 package tsecon
 
-// Import standard library packages and third-party packages for context management, Firestore client, and custom error handling.
+// Import standard library packages and packages for context management, Firestore client, and custom error handling.
 import (
 	"context" // context for managing request contexts and timeouts
+	"time"    // time for working with time and dates
 
 	"cloud.google.com/go/firestore"  // firestore for interacting with Google Cloud Firestore
 	"github.com/thorsphere/tserr"    // tserr for custom error handling
@@ -13,7 +14,8 @@ import (
 )
 
 const (
-	dbID = "eventdb" // dbID is the name of the Firestore collection where economic events will be stored. This constant can be modified if you want to use a different collection name.
+	dbID    = "eventdb"         // dbID is the name of the Firestore collection where economic events will be stored. This constant can be modified if you want to use a different collection name.
+	colPath = "economic_events" // path is the Firestore collection path where economic events will be stored. This constant can be modified if you want to use a different collection name.
 )
 
 // FirestoreEventRepository is an implementation of the EventRepository interface that uses Google Cloud Firestore as the storage backend.
@@ -30,6 +32,20 @@ func NewFirestoreEventRepository(ctx context.Context, projectID string) (*Firest
 		// Wrap the error using tserr to provide additional context about the operation that failed.
 		return nil, tserr.Op(&tserr.OpArgs{Op: "firestore.NewClient", Fn: "FirestoreEventRepository", Err: err})
 	}
+	// Attempt to connect to the Firestore database to ensure that the client is properly initialized and can communicate with the database.
+	// This is especially important when using the Firestore emulator during local development, as it helps catch configuration issues early.
+	pctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	// Perform a simple query to check if the Firestore client can successfully connect to the database.
+	// We attempt to retrieve at least one document from the "economic_events" collection.
+	_, err = client.Collection(colPath).Limit(1).Documents(pctx).GetAll()
+	// If the query fails, it indicates that there is an issue with the Firestore client or the database connection,
+	// so we close the client and return an error.
+	if err != nil {
+		client.Close()
+		return nil, tserr.Op(&tserr.OpArgs{Op: "Ping", Fn: "FirestoreEventRepository", Err: err})
+	}
+
 	// If the client is successfully created, return a new instance of FirestoreEventRepository with the initialized client.
 	return &FirestoreEventRepository{client: client}, nil
 }
@@ -73,7 +89,7 @@ func (r *FirestoreEventRepository) Store(ctx context.Context, event *Event) erro
 	docID := event.GenerateDocID()
 	// firestore.MergeAll performs the Upsert.
 	// If the doc exists, it updates differing fields. If not, it creates it.
-	_, err := r.client.Collection("economic_events").Doc(docID).Set(ctx, event)
+	_, err := r.client.Collection(colPath).Doc(docID).Set(ctx, event)
 	if err != nil {
 		return tserr.Op(&tserr.OpArgs{Op: "firestore.Set", Fn: event.Name, Err: err})
 	}
@@ -98,7 +114,7 @@ func (r *FirestoreEventRepository) GetByPeriod(ctx context.Context, period *Peri
 	// Query the Firestore collection "economic_events" for documents where the "Time" field is between the specified period.
 	// Firestore queries are inclusive, so we use >= for the start and <= for the end of the period.
 	// Note: Firestore will look for the struct field name "Time" by default, unless you provide firestore tags.
-	iter := r.client.Collection("economic_events").
+	iter := r.client.Collection(colPath).
 		Where("Time", ">=", period.From.UTC()).
 		Where("Time", "<=", period.To.UTC()).
 		Documents(ctx)

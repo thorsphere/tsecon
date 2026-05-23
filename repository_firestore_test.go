@@ -6,7 +6,6 @@ package tsecon_test
 // Import standard library packages and third-party packages for context management, testing, and custom error handling.
 import (
 	"context" // context for managing request contexts and timeouts
-	"net"
 	"os"      // os for accessing environment variables to determine Firestore configuration
 	"testing" // testing for writing unit tests in Go
 	"time"    // time for working with time and dates in tests
@@ -24,24 +23,11 @@ func setupFirestore(t *testing.T) (*tsecon.FirestoreEventRepository, func()) {
 	if emulatorHost == "" && projectID == "" {
 		t.Skip(tserr.NotSet("neither FIRESTORE_EMULATOR_HOST nor GOOGLE_CLOUD_PROJECT"))
 	}
-	// If the emulator host is set, we will use the emulator for testing.
-	if emulatorHost != "" {
-		// We will attempt to connect to the emulator to ensure it is running and accessible before proceeding with the tests.
-		conn, err := net.DialTimeout("tcp", emulatorHost, 500*time.Millisecond)
-		// If we cannot connect to the emulator, we will skip the tests to avoid failures due to the emulator not being available.
-		if err != nil {
-			t.Skip(tserr.NotAvailable(&tserr.NotAvailableArgs{S: emulatorHost, Err: err}))
-		}
-		// Close the connection to the emulator after the check is complete to free up resources.
-		conn.Close()
-		// If the emulator host is set, we will use the emulator for testing.
-		// If the project ID is not set, we can default to a dummy value since
-		// the emulator does not require a real project ID.
-		if projectID == "" {
-			projectID = "demo-project"
-		}
+	// If the emulator host is set, but project ID is not, we can default to a dummy value
+	// since the emulator does not require a real project ID.
+	if emulatorHost != "" && projectID == "" {
+		projectID = "demo-project"
 	}
-
 	// Create a context for initializing the FirestoreEventRepository, which will be used to manage timeouts and cancellation if needed.
 	ctx := context.Background()
 	// Create a new instance of FirestoreEventRepository using the setup context and project ID.
