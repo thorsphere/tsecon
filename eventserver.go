@@ -93,7 +93,7 @@ func (s *EventServer) ingestHandler(w http.ResponseWriter, r *http.Request) {
 	// If all events are processed successfully, return a success response.
 	w.WriteHeader(http.StatusOK)
 	// Write a success message to the response body.
-	w.Write([]byte("Successfully ingested events\n"))
+	w.Write([]byte(`{"message": "Successfully ingested events"}`))
 	// Close the request body to free up resources.
 	r.Body.Close()
 }
