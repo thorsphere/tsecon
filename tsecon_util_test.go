@@ -9,7 +9,6 @@ import (
 	"os"            // os for file and directory operations
 	"path/filepath" // filepath for constructing file paths
 	"testing"       // testing for writing test cases
-	"time"          // time for working with time and dates
 
 	"github.com/thorsphere/tsecon" // tsecon for the package being tested
 	"github.com/thorsphere/tserr"  // tserr for custom error handling
@@ -20,54 +19,6 @@ import (
 const (
 	testprefix string = "tsecon_*"  // mostly used as prefix for temporary files or directories
 	testdbname string = "events.db" // the name of the SQLite database file used in tests
-)
-
-var (
-	// Define some sample events for testing purposes
-	evNfp tsecon.Event = tsecon.Event{
-		Name:     "Non-Farm Payrolls",
-		Time:     time.Date(2024, 7, 5, 8, 30, 0, 0, time.UTC),
-		Country:  "US",
-		Actual:   new(200.0),
-		Estimate: new(180.0),
-		Previous: new(150.0),
-		Unit:     "K",
-		Impact:   tsecon.ImpactHigh,
-		Source:   "Bureau of Labor Statistics",
-	}
-	evGdp24 tsecon.Event = tsecon.Event{
-		Name:     "GDP Growth Rate",
-		Time:     time.Date(2024, 7, 10, 8, 30, 0, 0, time.UTC),
-		Country:  "US",
-		Actual:   new(3.5),
-		Estimate: new(3.0),
-		Previous: new(2.8),
-		Unit:     "%",
-		Impact:   tsecon.ImpactMedium,
-		Source:   "Bureau of Economic Analysis",
-	}
-	evGdp30 tsecon.Event = tsecon.Event{
-		Name:     "GDP Growth Rate",
-		Time:     time.Date(2030, 7, 10, 8, 30, 0, 0, time.UTC),
-		Country:  "US",
-		Actual:   nil,
-		Estimate: nil,
-		Previous: nil,
-		Unit:     "%",
-		Impact:   tsecon.ImpactLow,
-		Source:   "Bureau of Economic Analysis",
-	}
-	// Define a slice of events for testing purposes
-	evs []tsecon.Event = []tsecon.Event{
-		evNfp,
-		evGdp24,
-		evGdp30,
-	}
-	// Define a sample period for testing purposes
-	per *tsecon.Period = &tsecon.Period{
-		From: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-		To:   time.Date(2025, 7, 31, 23, 59, 59, 0, time.UTC),
-	}
 )
 
 // Mock is a mock implementation of the Provider interface for testing purposes.
