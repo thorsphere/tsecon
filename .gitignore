@@ -33,4 +33,4 @@ go.work.sum
 
 deploy.sh
 smoke_test.sh
-
+events.db
