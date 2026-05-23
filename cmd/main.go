@@ -6,9 +6,9 @@ package main
 // Import necessary packages for context handling, OS signal processing, time management,
 // and the tsecon, tserr, and tslog packages from the thorsphere project.
 import (
-	"context" // context
-	"fmt"
-	"net/http"
+	"context"   // context
+	"fmt"       // fmt
+	"net/http"  // net/http
 	"os"        // os
 	"os/signal" // signal
 	"syscall"   // syscall
@@ -22,6 +22,8 @@ import (
 const (
 	// Define the path to the SQLite database file. This constant can be modified to point to a different location or filename as needed.
 	dbPath = "events.db"
+	// Define the default port for the server to listen on. This can be overridden by setting the PORT environment variable, which is useful for deployment in environments like Cloud Run that expect the application to listen on a specific port.
+	srvPort = "8080"
 )
 
 // The main function serves as the entry point for the application.
@@ -32,7 +34,7 @@ func main() {
 	// Let Cloud Run decide the port, fallback to 8080 for local development
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		port = srvPort
 	}
 	// Construct the server address by combining the host (empty string for all interfaces) and the port.
 	serverAddr := ":" + port
@@ -48,17 +50,25 @@ func main() {
 	var err error
 	// Check if GOOGLE_CLOUD_PROJECT is set to determine if we are running in Google Cloud and should use Firestore.
 	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
-	// If GOOGLE_CLOUD_PROJECT is set, we assume we are running in Google Cloud and use Firestore.
-	// Otherwise, we fall back to the local SQLite database.
-	// This allows the application to run seamlessly in both local development and production environments
-	// without requiring code changes.
-	if projectID != "" {
-		// If GOOGLE_CLOUD_PROJECT is set, assume we are in Google Cloud and use Firestore
-		tslog.Info(fmt.Sprintf("GOOGLE_CLOUD_PROJECT is set (%s). Initializing FirestoreEventRepository.", projectID))
+	// Check if FIRESTORE_EMULATOR_HOST is set to determine if we should use the Firestore emulator for testing.
+	emulatorHost := os.Getenv("FIRESTORE_EMULATOR_HOST")
+	// If either the project ID or the emulator host is set, we will attempt to initialize the FirestoreEventRepository.
+	// If neither is set, we will fall back to using the SQLiteEventRepository for local development.
+	if projectID != "" || emulatorHost != "" {
+		// If the emulator host is set, we will use the emulator for testing.
+		// If the project ID is not set, we can default to a dummy value since the emulator does not require a real project ID.
+		if projectID == "" {
+			projectID = "demo-project"
+		}
+		// Log the initialization of the FirestoreEventRepository, including whether we are using the emulator or a real Firestore instance.
+		tslog.Info(fmt.Sprintf("Initializing FirestoreEventRepository (Project: %s, Emulator: %v).", projectID, emulatorHost != ""))
+		// Attempt to initialize the FirestoreEventRepository with the provided project ID and context.
 		repo, err = tsecon.NewFirestoreEventRepository(context.Background(), projectID)
 	} else {
-		// Otherwise, fallback to the local SQLite database
-		tslog.Info("GOOGLE_CLOUD_PROJECT is not set. Falling back to local SQLiteEventRepository.")
+		// If neither the project ID nor the emulator host is set, log that we are falling back
+		// to using the SQLiteEventRepository for local development.
+		tslog.Info("FIRESTORE_EMULATOR_HOST / GOOGLE_CLOUD_PROJECT not set. Falling back to local SQLiteEventRepository.")
+		// Attempt to initialize the SQLiteEventRepository with the specified database path.
 		repo, err = tsecon.NewSQLiteEventRepository(dbPath)
 	}
 	// If there was an error initializing the repository, log the error and exit the application with a non-zero status code to indicate failure.
@@ -67,9 +77,11 @@ func main() {
 		tslog.Error(tserr.Op(&tserr.OpArgs{Op: "Initialize Event Repository", Fn: "main", Err: err}))
 		os.Exit(1)
 	}
+	// Ensure that the repository is properly closed when the main function exits,
+	// which will release any resources associated with the repository, such as database connections.
+	defer repo.Close()
 	// Create a new EventServer instance with the initialized repository.
 	api := tsecon.NewEventServer(repo, tok)
-
 	// Configure the HTTP server with the EventServer as the handler, and set reasonable timeouts for read and write operations.
 	srv := &http.Server{
 		Addr:         serverAddr,
@@ -84,23 +96,19 @@ func main() {
 			tslog.Error(tserr.Op(&tserr.OpArgs{Op: "ListenAndServe", Fn: serverAddr, Err: err}))
 		}
 	}()
-
 	// Wait for interrupt signal to gracefully shut down the server
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit // Blocks here until you press Ctrl+C in the terminal
-
+	// Log that we have received an interrupt signal and are beginning the shutdown process.
 	tslog.Info("\nShutting down server gracefully...")
-
 	// Create a deadline to wait for currently active requests to finish
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
 	// Attempt to gracefully shut down the server, allowing active connections to complete
 	if err := srv.Shutdown(ctx); err != nil {
 		tslog.Error(tserr.Op(&tserr.OpArgs{Op: "Shutdown", Fn: serverAddr, Err: err}))
 	}
-
 	// Log that the server has successfully exited
 	tslog.Info("Server successfully exited")
 }
