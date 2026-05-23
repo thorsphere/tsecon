@@ -30,6 +30,15 @@ SERVICE_URL=$(gcloud run services describe "$SERVICE_NAME" \
   --project "$PROJECT_ID" \
   | grep -E "^URL:" | awk '{print $2}')
 
+# Ensure Firestore database exists (idempotent operation)
+echo "Ensuring Firestore database 'eventdb' exists..."
+gcloud firestore databases create \
+  --database=eventdb \
+  --location="$REGION" \
+  --project="$PROJECT_ID" \
+  --type=firestore-native 2>/dev/null || echo "   ↳ Database 'eventdb' already exists, skipping."
+
+
 echo -e "\n✅ Deployment successful! Service URL is: $SERVICE_URL\n"
 
 # 3. NEXT STEPS
