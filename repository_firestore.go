@@ -34,7 +34,7 @@ func NewFirestoreEventRepository(ctx context.Context, projectID string) (*Firest
 	}
 	// Attempt to connect to the Firestore database to ensure that the client is properly initialized and can communicate with the database.
 	// This is especially important when using the Firestore emulator during local development, as it helps catch configuration issues early.
-	pctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	pctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 	// Perform a simple query to check if the Firestore client can successfully connect to the database.
 	// We attempt to retrieve at least one document from the "economic_events" collection.

@@ -100,7 +100,7 @@ func TestIngestHandler(t *testing.T) {
 		// Use t.Run to run each test case as a subtest, which provides better reporting and isolation.
 		t.Run(tc.name, func(t *testing.T) {
 			// Create a new HTTP request with the specified method, URL, and payload.
-			req, err := http.NewRequest(tc.method, baseURL+"/api/ingest", bytes.NewBufferString(tc.payload))
+			req, err := http.NewRequest(tc.method, baseURL+"/events/ingest", bytes.NewBufferString(tc.payload))
 			if err != nil {
 				// If there is an error creating the request, fail the test with a detailed error message.
 				t.Fatal(tserr.Op(&tserr.OpArgs{Op: "http.NewRequest", Fn: tc.name, Err: err}).Error())
@@ -153,35 +153,35 @@ func TestRetrieveHandler(t *testing.T) {
 			name:   "Valid timeframe with results",
 			method: http.MethodGet,
 			// Timeframe that encompasses evNfp and evGdp24 from the mock data
-			endpoint:       "/api/retrieve?from=2024-01-01T00:00:00Z&to=2025-12-31T23:59:59Z",
+			endpoint:       "/events/retrieve?from=2024-01-01T00:00:00Z&to=2025-12-31T23:59:59Z",
 			authHeader:     "Bearer " + tok,
 			expectedStatus: http.StatusOK,
 		},
 		{
 			name:           "Unauthorized Access",
 			method:         http.MethodGet,
-			endpoint:       "/api/retrieve?from=2024-01-01T00:00:00Z&to=2025-12-31T23:59:59Z",
+			endpoint:       "/events/retrieve?from=2024-01-01T00:00:00Z&to=2025-12-31T23:59:59Z",
 			authHeader:     "Bearer " + "totally-wrong-token",
 			expectedStatus: http.StatusUnauthorized,
 		},
 		{
 			name:           "Missing timeframe (defaults to today)",
 			method:         http.MethodGet,
-			endpoint:       "/api/retrieve",
+			endpoint:       "/events/retrieve",
 			authHeader:     "Bearer " + tok,
 			expectedStatus: http.StatusOK, // Expected to succeed and return an empty map/null
 		},
 		{
 			name:           "Invalid timeframe format",
 			method:         http.MethodGet,
-			endpoint:       "/api/retrieve?from=not-a-date&to=also-not-a-date",
+			endpoint:       "/events/retrieve?from=not-a-date&to=also-not-a-date",
 			authHeader:     "Bearer " + tok,
 			expectedStatus: http.StatusBadRequest, // Invalid timestamps should result in a 400 Bad Request
 		},
 		{
 			name:           "Wrong HTTP Method",
 			method:         http.MethodPost,
-			endpoint:       "/api/retrieve?from=2024-01-01T00:00:00Z&to=2025-12-31T23:59:59Z",
+			endpoint:       "/events/retrieve?from=2024-01-01T00:00:00Z&to=2025-12-31T23:59:59Z",
 			authHeader:     "Bearer " + tok,
 			expectedStatus: http.StatusMethodNotAllowed, // POST is not allowed on the retrieve endpoint
 		},

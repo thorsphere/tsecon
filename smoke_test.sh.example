@@ -28,8 +28,8 @@ API_BEARER_KEY="${API_BEARER_KEY:-your-super-secret-api-token}"
 echo -e "Testing against Service URL: $SERVICE_URL\n"
 
 # 1. SMOKE TEST: POST (Ingest)
-echo "Testing API: POST /api/ingest..."
-POST_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$SERVICE_URL/api/ingest" \
+echo "Testing API: POST /events/ingest..."
+POST_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$SERVICE_URL/events/ingest" \
      -H "Content-Type: application/json" \
      -H "Authorization: Bearer $API_BEARER_KEY" \
      -d '[
@@ -54,8 +54,8 @@ else
 fi
 
 # 2. SMOKE TEST: GET (Retrieve)
-echo -e "\nTesting API: GET /api/retrieve..."
-RESPONSE=$(curl -s -X GET "$SERVICE_URL/api/retrieve?from=2026-05-01T00:00:00Z&to=2026-05-31T23:59:59Z" \
+echo -e "\nTesting API: GET /events/retrieve..."
+RESPONSE=$(curl -s -X GET "$SERVICE_URL/events/retrieve?from=2026-05-01T00:00:00Z&to=2026-05-31T23:59:59Z" \
      -H "Authorization: Bearer $API_BEARER_KEY")
 
 # Verify if valid JSON is returned AND that the array is not empty

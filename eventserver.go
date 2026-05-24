@@ -20,16 +20,17 @@ type EventServer struct {
 	repo EventRepository // EventRepository is an interface that defines methods for storing and retrieving events from a data source.
 	mux  *http.ServeMux  // HTTP request multiplexer to route incoming requests to the appropriate handlers
 	tok  string          // Authentication token for securing the API
+
 }
 
 // NewEventServer creates a new instance of EventServer with the provided EventRepository.
 func NewEventServer(repo EventRepository, tok string) *EventServer {
 	// Initialize the EventServer struct with the provided repository and token, and set up the HTTP request multiplexer.
 	s := &EventServer{repo: repo, mux: http.NewServeMux(), tok: tok}
-	// Register the ingestHandler to process events at the "/api/ingest" endpoint.
-	s.mux.HandleFunc("/api/ingest", s.requireAuth(s.ingestHandler))
-	// Register the retrieveHandler to fetch events at the "/api/events" endpoint.
-	s.mux.HandleFunc("/api/retrieve", s.requireAuth(s.retrieveHandler))
+	// Register the ingestHandler to process events at the "/events/ingest" endpoint.
+	s.mux.HandleFunc("/events/ingest", s.requireAuth(s.ingestHandler))
+	// Register the retrieveHandler to fetch events at the "/events/retrieve" endpoint.
+	s.mux.HandleFunc("/events/retrieve", s.requireAuth(s.retrieveHandler))
 	// Return the fully configured EventServer instance, ready to be started.
 	return s
 }

@@ -10,7 +10,7 @@ echo "================================================="
 
 # 1. Create a new event (Upsert)
 echo -e "\n=> [POST] Creating 'Non-Farm Payrolls' Event..."
-curl -s -X POST "$API_URL/api/ingest" \
+curl -s -X POST "$API_URL/events/ingest" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '[
@@ -29,7 +29,7 @@ curl -s -X POST "$API_URL/api/ingest" \
 
 # 2. Create another event (GDP)
 echo -e "\n=> [POST] Creating 'GDP Growth Rate' Event..."
-curl -s -X POST "$API_URL/api/ingest" \
+curl -s -X POST "$API_URL/events/ingest" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '[{
@@ -47,7 +47,7 @@ curl -s -X POST "$API_URL/api/ingest" \
 # 3. Retrieve events by Period
 echo -e "\n=> [GET] Retrieving events for July 2024..."
 # Adjust the query parameters based on exactly how your request parsing is configured in the handler
-curl -s -X GET "$API_URL/api/retrieve?from=2024-07-01T00:00:00Z&to=2024-07-31T23:59:59Z" \
+curl -s -X GET "$API_URL/events/retrieve?from=2024-07-01T00:00:00Z&to=2024-07-31T23:59:59Z" \
   -H "Authorization: Bearer $TOKEN" | jq || echo "Failed or jq not installed."
 
 echo -e "\n================================================="
