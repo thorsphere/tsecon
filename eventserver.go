@@ -1,3 +1,26 @@
+// Package tsecon provides the core types and interfaces for economic calendar events,
+// including an HTTP‑based ingestion and retrieval server, and pluggable storage backends
+// (SQLite and Google Cloud Firestore).
+//
+// # Key types
+//
+//   - [Event] represents a single economic release (e.g., GDP, CPI) with its actual,
+//     estimate, previous, and impact fields.
+//   - [EventRepository] is the storage interface implemented by [SQLiteEventRepository]
+//     and [FirestoreEventRepository].
+//   - [EventServer] exposes authenticated HTTP endpoints:
+//     /events/ingest (POST) and /events/retrieve (GET).
+//
+// # Typical usage
+//
+// Create a repository, then start the server:
+//
+//	repo, err := tsecon.NewSQLiteEventRepository("events.db")
+//	// ... error handling ...
+//	defer repo.Close()
+//	api := tsecon.NewEventServer(repo, "your-api-token")
+//	http.ListenAndServe(":8080", api)
+//
 // Copyright (c) 2026 thorsphere.
 // All Rights Reserved. Use is governed with GNU Affero General Public License v3.0
 // that can be found in the LICENSE file.
