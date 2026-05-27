@@ -68,7 +68,8 @@ func TestEvents(t *testing.T) {
 	var out strings.Builder
 	// Iterate over each event in the sample events slice and append its string representation to the output string
 	for _, ev := range evs {
-		out.WriteString(ev.String() + "\n")
+		out.WriteString(ev.String())
+		out.WriteString("\n")
 	}
 	// Compare the output to a golden file using the EvalGoldenFile function from the tsfio package,
 	// and if there is an error, fail the test with the error message

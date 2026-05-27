@@ -20,8 +20,6 @@ import (
 )
 
 const (
-	// Define the path to the SQLite database file. This constant can be modified to point to a different location or filename as needed.
-	dbPath = "events.db"
 	// Define the default port for the server to listen on. This can be overridden by setting the PORT environment variable, which is useful for deployment in environments like Cloud Run that expect the application to listen on a specific port.
 	srvPort = "8080"
 )
@@ -45,32 +43,25 @@ func main() {
 		tslog.Warn("Environment variable 'API_TOKEN' is empty. Using default 'swordfish' for local development.")
 		tok = "swordfish"
 	}
-	// Initialize your repository based on the environment.
-	var repo tsecon.EventRepository
-	var err error
-	// Check if GOOGLE_CLOUD_PROJECT is set to determine if we are running in Google Cloud and should use Firestore.
+	// Initialize the Firestore-backed repository.
 	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
-	// Check if FIRESTORE_EMULATOR_HOST is set to determine if we should use the Firestore emulator for testing.
-	emulatorHost := os.Getenv("FIRESTORE_EMULATOR_HOST")
-	// If either the project ID or the emulator host is set, we will attempt to initialize the FirestoreEventRepository.
-	// If neither is set, we will fall back to using the SQLiteEventRepository for local development.
-	if projectID != "" || emulatorHost != "" {
-		// If the emulator host is set, we will use the emulator for testing.
-		// If the project ID is not set, we can default to a dummy value since the emulator does not require a real project ID.
+	// If FIRESTORE_EMULATOR_HOST is set, we use the Firestore emulator for local testing.
+	// In that case a real project ID is not required, so we default to a dummy value.
+	if emulatorHost := os.Getenv("FIRESTORE_EMULATOR_HOST"); emulatorHost != "" {
 		if projectID == "" {
 			projectID = "demo-project"
 		}
-		// Log the initialization of the FirestoreEventRepository, including whether we are using the emulator or a real Firestore instance.
-		tslog.Info(fmt.Sprintf("Initializing FirestoreEventRepository (Project: %s, Emulator: %v).", projectID, emulatorHost != ""))
-		// Attempt to initialize the FirestoreEventRepository with the provided project ID and context.
-		repo, err = tsecon.NewFirestoreEventRepository(context.Background(), projectID)
+		tslog.Info(fmt.Sprintf("Initializing FirestoreEventRepository with emulator (Host: %s, Project: %s).", emulatorHost, projectID))
+	} else if projectID != "" {
+		tslog.Info(fmt.Sprintf("Initializing FirestoreEventRepository (Project: %s).", projectID))
 	} else {
-		// If neither the project ID nor the emulator host is set, log that we are falling back
-		// to using the SQLiteEventRepository for local development.
-		tslog.Info("FIRESTORE_EMULATOR_HOST / GOOGLE_CLOUD_PROJECT not set. Falling back to local SQLiteEventRepository.")
-		// Attempt to initialize the SQLiteEventRepository with the specified database path.
-		repo, err = tsecon.NewSQLiteEventRepository(dbPath)
+		// Neither GOOGLE_CLOUD_PROJECT nor FIRESTORE_EMULATOR_HOST is set —
+		// we cannot proceed without a backend.
+		tslog.Error(tserr.NotSet("FIRESTORE_EMULATOR_HOST and GOOGLE_CLOUD_PROJECT"))
+		os.Exit(1)
 	}
+	// Initialize the FirestoreEventRepository with the project ID.
+	repo, err := tsecon.NewFirestoreEventRepository(context.Background(), projectID)
 	// If there was an error initializing the repository, log the error and exit the application with a non-zero status code to indicate failure.
 	if err != nil {
 		// Log the error using tslog and exit the application with a non-zero status code to indicate failure.

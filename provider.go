@@ -46,8 +46,12 @@ func PrintEvents(events []Event) string {
 	} else { // If there are events, iterate over each event and print its details using the String method of the Event struct.
 		var out strings.Builder
 		for _, event := range events {
-			out.WriteString(event.String() + "\n")
+			// Write the string representation of the event to the output
+			out.WriteString(event.String())
+			// Write a newline character to the output
+			out.WriteString("\n")
 		}
+		// Return the string representation of the events
 		return out.String()
 	}
 }

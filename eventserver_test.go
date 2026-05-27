@@ -20,29 +20,86 @@ const (
 	tok = "all-your-base-are-belong-to-us" // Dummy token for testing authentication
 )
 
-// setupTestServer starts the server and registers the teardown/cleanup automatically.
-// It returns the server URL and the initialized repository.
+// mockRepo is an in-memory implementation of tsecon.EventRepository for testing.
+type mockRepo struct {
+	events map[string]*tsecon.Event // map of events by ID
+}
+
+// newMockRepo creates a new mockRepo instance.
+func newMockRepo() *mockRepo {
+	// Create a new mockRepo instance
+	return &mockRepo{events: make(map[string]*tsecon.Event)}
+}
+
+// Store adds an event to the mockRepo's events map.
+func (m *mockRepo) Store(ctx context.Context, ev *tsecon.Event) error {
+	// Check if the repository instance is nil
+	if m == nil {
+		return tserr.NilPtr()
+	}
+	// Check if the event is nil
+	if ev == nil {
+		return tserr.NilPtr()
+	}
+	// Add the event to the mockRepo's events map
+	m.events[ev.GenerateDocID()] = ev
+	// Return nil to indicate success
+	return nil
+}
+
+// GetByPeriod retrieves events from the mockRepo's events map based on the provided period.
+func (m *mockRepo) GetByPeriod(ctx context.Context, period *tsecon.Period) ([]tsecon.Event, error) {
+	// Check if the repository instance is nil
+	if m == nil {
+		return nil, tserr.NilPtr()
+	}
+	// Check if the period is nil
+	if period == nil {
+		return nil, tserr.NilPtr()
+	}
+	// Create a slice of events that match the period
+	var result []tsecon.Event
+	// Iterate over the events in the mockRepo's events map
+	for _, ev := range m.events {
+		// Check if the event's time is within the specified period
+		if !ev.Time.Before(period.From) && !ev.Time.After(period.To) {
+			// If the event is within the period, append it to the result slice
+			result = append(result, *ev)
+		}
+	}
+	// If the result slice is empty, return an empty slice
+	if result == nil {
+		result = []tsecon.Event{}
+	}
+	// Return the slice of events that match the specified period
+	return result, nil
+}
+
+// Close does nothing in the mockRepo implementation.
+func (m *mockRepo) Close() error {
+	return nil
+}
+
+// setupTestServer sets up a test server and returns the base URL and the mockRepo instance.
 func setupTestServer(t *testing.T) (string, tsecon.EventRepository) {
-	// Create a temporary database for testing.
-	repo, fn := tmpDB(t)
-	// Create a new EventServer instance with the initialized repository. The authentication token is not relevant for these tests, so we can use a dummy value.
+	// Use t.Helper() to call t.Fatal if any of the following steps fail
+	t.Helper()
+	// Create a new mockRepo instance
+	repo := newMockRepo()
+	// Create a new EventServer instance with the mockRepo
 	server := tsecon.NewEventServer(repo, tok)
-	// httptest.NewServer automatically binds to a random free OS port (127.0.0.1:0)
-	// and starts the server immediately. No sleeps or error channels required!
+	// Create a new HTTP test server with the EventServer
 	ts := httptest.NewServer(server)
-	// Register automated cleanup. t.Cleanup runs automatically when the test using it finishes.
-	t.Cleanup(func() {
-		ts.Close() // Immediately shuts down the httptest server
-		rmDB(t, repo, fn)
-	})
-	// ts.URL contains the actual active URL with the random port (e.g., http://127.0.0.1:54932)
+	// Close the test server to clean up resources
+	t.Cleanup(func() { ts.Close() })
+	// Return the base URL and the mockRepo instance
 	return ts.URL, repo
 }
 
+// TestIngestHandler tests the ingestHandler of the EventServer for various scenarios.
 func TestIngestHandler(t *testing.T) {
 	// Setup test server and get the base URL for requests
 	baseURL, _ := setupTestServer(t)
-
 	// Prepare valid test data (using the same events as in TestEventRepository)
 	validPayloadBytes, err := json.Marshal(evs)
 	if err != nil {
@@ -132,7 +189,6 @@ func TestIngestHandler(t *testing.T) {
 func TestRetrieveHandler(t *testing.T) {
 	// Setup test server and get the base URL and repository instance
 	baseURL, repo := setupTestServer(t)
-
 	// Seed the database with our sample events before running retrieve tests
 	for _, ev := range evs {
 		e := ev // create a local copy to pass a stable pointer
@@ -140,7 +196,6 @@ func TestRetrieveHandler(t *testing.T) {
 			t.Fatal(tserr.Op(&tserr.OpArgs{Op: "repo.Store", Fn: ev.Name, Err: err}).Error())
 		}
 	}
-
 	// Define test cases for different retrieve scenarios
 	tests := []struct {
 		name           string
