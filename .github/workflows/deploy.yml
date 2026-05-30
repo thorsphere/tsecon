@@ -1,17 +1,24 @@
-name: Deploy App on Stg on Push
+name: Deploy App
 
 on:
   push:
     branches:
       - main
+    tags:
+      - 'v*.*.*'
 
 permissions:
   contents: 'read'
   id-token: 'write'
 
 jobs:
-  deploy:
+  deploy-staging:
+    name: Deploy to Staging
     runs-on: ubuntu-latest
+
+    if: github.ref_type == 'branch'
+    environment: staging
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -31,6 +38,8 @@ jobs:
     # This makes all gcloud commands available for subsequent steps.
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v3
+      with:
+        project_id: ${{ vars.GOOGLE_PROJECT_ID }}
 
     # Run the deployment script (deploy.sh). The script itself does not
     # handle authentication – that has already been done in the earlier steps.
@@ -43,6 +52,46 @@ jobs:
         API_BEARER_KEY: ${{ secrets.API_BEARER_KEY }}
       run: |
         chmod +x ./deploy.sh
-        export PROJECT_ID="$PROJECT_ID"
-        export API_BEARER_KEY="$API_BEARER_KEY"
+        ./deploy.sh
+
+deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+
+    if: github.ref_type == 'tag'
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    # Authenticate with Google Cloud using Workload Identity Federation.
+    # Instead of a stored JSON key, GitHub exchanges a short‑lived OIDC token
+    # for GCP credentials. The workload_identity_provider and service_account
+    # must be configured as repository variables in GitHub Settings.
+    - name: Google Auth via WIF
+      id: auth
+      uses: google-github-actions/auth@v3
+      with:
+        workload_identity_provider: ${{ vars.GOOGLE_WORKLOAD_PROVIDER }}
+        service_account: ${{ vars.GOOGLE_SERVICE_ACCOUNT }}
+
+    # Install and configure the gcloud CLI using the credentials obtained above.
+    # This makes all gcloud commands available for subsequent steps.
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v3
+      with:
+        project_id: ${{ vars.GOOGLE_PROJECT_ID }}
+
+    # Run the deployment script (deploy.sh). The script itself does not
+    # handle authentication – that has already been done in the earlier steps.
+    # PROJECT_ID and API_BEARER_KEY are passed from GitHub variables/secrets.
+    - name: Run Deployment Script
+      env:
+        PROJECT_ID: ${{ vars.GOOGLE_PROJECT_ID }}
+        SERVICE_NAME: ${{ vars.GOOGLE_SERVICE_NAME }}
+        REGION: ${{ vars.GOOGLE_REGION }}
+        API_BEARER_KEY: ${{ secrets.API_BEARER_KEY }}
+      run: |
+        chmod +x ./deploy.sh
         ./deploy.sh
