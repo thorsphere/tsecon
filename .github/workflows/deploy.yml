@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     # Authenticate with Google Cloud using Workload Identity Federation.
     # Instead of a stored JSON key, GitHub exchanges a short‑lived OIDC token
