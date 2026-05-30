@@ -30,7 +30,7 @@ jobs:
     # Install and configure the gcloud CLI using the credentials obtained above.
     # This makes all gcloud commands available for subsequent steps.
     - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v2
+      uses: google-github-actions/setup-gcloud@v3
 
     # Run the deployment script (deploy.sh). The script itself does not
     # handle authentication – that has already been done in the earlier steps.
