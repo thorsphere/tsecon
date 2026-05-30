@@ -1,4 +1,4 @@
-name: Deploy App on Push
+name: Deploy App on Stg on Push
 
 on:
   push:
