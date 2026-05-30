@@ -54,7 +54,7 @@ jobs:
         chmod +x ./deploy.sh
         ./deploy.sh
 
-deploy-production:
+  deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
 
