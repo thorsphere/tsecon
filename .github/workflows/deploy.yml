@@ -1,0 +1,46 @@
+name: Deploy App on Push
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: 'read'
+  id-token: 'write'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Authenticate with Google Cloud using Workload Identity Federation.
+    # Instead of a stored JSON key, GitHub exchanges a short‑lived OIDC token
+    # for GCP credentials. The workload_identity_provider and service_account
+    # must be configured as repository variables in GitHub Settings.
+    - name: Google Auth via WIF
+      id: auth
+      uses: google-github-actions/auth@v2
+      with:
+        workload_identity_provider: ${{ vars.GCP_WORKLOAD_PROVIDER }}
+        service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+    # Install and configure the gcloud CLI using the credentials obtained above.
+    # This makes all gcloud commands available for subsequent steps.
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
+    # Run the deployment script (deploy.sh). The script itself does not
+    # handle authentication – that has already been done in the earlier steps.
+    # PROJECT_ID and API_BEARER_KEY are passed from GitHub variables/secrets.
+    - name: Run Deployment Script
+      env:
+        PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+        API_BEARER_KEY: ${{ secrets.API_BEARER_KEY }}
+      run: |
+        chmod +x ./deploy.sh
+        export PROJECT_ID="$PROJECT_ID"
+        export API_BEARER_KEY="$API_BEARER_KEY"
+        ./deploy.sh
