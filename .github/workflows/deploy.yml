@@ -38,6 +38,8 @@ jobs:
     - name: Run Deployment Script
       env:
         PROJECT_ID: ${{ vars.GOOGLE_PROJECT_ID }}
+        SERVICE_NAME: ${{ vars.GOOGLE_SERVICE_NAME }}
+        REGION: ${{ vars.GOOGLE_REGION }}
         API_BEARER_KEY: ${{ secrets.API_BEARER_KEY }}
       run: |
         chmod +x ./deploy.sh

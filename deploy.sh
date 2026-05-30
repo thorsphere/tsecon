@@ -8,9 +8,9 @@
 set -euo pipefail
 
 # 1. CONFIGURATION
-PROJECT_ID="YOUR_STAGING_PROJECT_ID"
-REGION="YOUR_STAGING_PROJECT_REGION"
-SERVICE_NAME="YOUR_SERVICE_NAME"
+PROJECT_ID="${PROJECT_ID}"
+REGION="${REGION:-us-east4}"
+SERVICE_NAME="${SERVICE_NAME}"
 API_BEARER_KEY="${API_BEARER_KEY:-your-super-secret-api-token}" 
 
 echo "Starting deployment for '$SERVICE_NAME' in region '$REGION'..."
@@ -32,12 +32,16 @@ SERVICE_URL=$(gcloud run services describe "$SERVICE_NAME" \
 
 # Ensure Firestore database exists (idempotent operation)
 echo "Ensuring Firestore database 'eventdb' exists..."
-gcloud firestore databases create \
-  --database=eventdb \
-  --location="$REGION" \
-  --project="$PROJECT_ID" \
-  --type=firestore-native 2>/dev/null || echo "   ↳ Database 'eventdb' already exists, skipping."
-
+if ! gcloud firestore databases describe --database=eventdb --project="$PROJECT_ID" &>/dev/null; then
+    echo "Database 'eventdb' does not exist. Creating..."
+    gcloud firestore databases create \
+      --database=eventdb \
+      --location="$REGION" \
+      --project="$PROJECT_ID" \
+      --type=firestore-native
+else
+    echo " ↳ Database 'eventdb' already exists, skipping."
+fi
 
 echo -e "\n✅ Deployment successful! Service URL is: $SERVICE_URL\n"
 

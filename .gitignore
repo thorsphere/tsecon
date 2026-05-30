@@ -31,6 +31,4 @@ go.work.sum
 # .idea/
 .vscode/
 
-deploy.sh
 smoke_test.sh
-events.db
