@@ -8,9 +8,9 @@
 set -euo pipefail
 
 # 1. CONFIGURATION
-PROJECT_ID="${PROJECT_ID}"
+: "${PROJECT_ID?Must set PROJECT_ID}"
+: "${SERVICE_NAME?Must set SERVICE_NAME}"
 REGION="${REGION:-us-east4}"
-SERVICE_NAME="${SERVICE_NAME}"
 API_BEARER_KEY="${API_BEARER_KEY:-your-super-secret-api-token}" 
 
 echo "Starting deployment for '$SERVICE_NAME' in region '$REGION'..."
@@ -48,4 +48,4 @@ echo -e "\n✅ Deployment successful! Service URL is: $SERVICE_URL\n"
 # 3. NEXT STEPS
 echo "To run the smoke test against this deployment, use the following command:"
 echo "export API_BEARER_KEY=\"$API_BEARER_KEY\""
-echo "./smoke_test.sh.example \"$SERVICE_URL\""
+echo "./smoke_test.sh \"$SERVICE_URL\""

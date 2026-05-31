@@ -14,7 +14,7 @@ import (
 )
 
 // EconomicEvent represents a single calendar event with its details.
-// Todo: Implement a separate package for country codes and use it here for better type safety and validation.
+// Thought: Implement a separate package for country codes and use it here for better type safety and validation.
 type Event struct {
 	ID       int64       `json:"id"`       // Unique identifier for the event, e.g., a database primary key or a UUID. It is expected to be set by the database.
 	Name     string      `json:"name"`     // Name of the economic event, e.g., "Non-Farm Payrolls", "GDP Growth Rate"
@@ -48,7 +48,6 @@ func NewPeriodForDate(date time.Time) *Period {
 
 // String returns a formatted string representation of the Event.
 // Todo: Use tstable package to print as a table
-// Todo: Add a method to compare actual vs estimate and previous, and return a string indicating if it's better, worse, or as expected.
 func (ev Event) String() string {
 	t := fmt.Sprintf("%d: %s (%s) at %s - Impact: %s", ev.ID, ev.Name, ev.Country, ev.Time.Format(time.RFC3339), ev.Impact.String())
 	t += "\n  Actual: " + lpstats.FmtFloatPtr(ev.Actual) + " " + ev.Unit

@@ -1,5 +1,22 @@
 # tsecon
 
+[![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/thorsphere/tsecon)](https://pkg.go.dev/mod/github.com/thorsphere/tsecon)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/thorsphere/tsecon)
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/thorsphere/tsecon)](https://goreportcard.com/report/github.com/thorsphere/tsecon)
+[![CodeFactor](https://www.codefactor.io/repository/github/thorsphere/tsecon/badge)](https://www.codefactor.io/repository/github/thorsphere/tsecon)
+![OSS Lifecycle](https://img.shields.io/osslifecycle/thorsphere/tsecon)
+![Libraries.io dependency status for GitHub repo](https://img.shields.io/librariesio/github/thorsphere/tsecon)
+
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/thorsphere/tsecon)
+![GitHub last commit](https://img.shields.io/github/last-commit/thorsphere/tsecon)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/thorsphere/tsecon)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/thorsphere/tsecon)
+![GitHub Top Language](https://img.shields.io/github/languages/top/thorsphere/tsecon)
+![GitHub](https://img.shields.io/github/license/thorsphere/tsecon)
+
+---
+
 **tsecon** is a Go package for ingesting and querying economic calendar events.  
 It provides an HTTP API backed by Google Cloud Firestore, with a token‑authenticated  
 retrieval endpoint.
@@ -48,6 +65,51 @@ Once the server is running, you can verify it with the local smoke test:
 ```
 
 > **Note:** The emulator does not persist data between restarts.
+```
+
+With this (using `run_local.sh` for the all‑in‑one approach, and also showing the manual way):
+
+```markdown
+### Local Development with the Firestore Emulator
+
+**Option A – One‑command runner (recommended)**
+
+The `run_local.sh` script starts the Firestore emulator (via Docker), launches
+the server, and runs a quick smoke test — all in one terminal:
+
+```bash
+./run_local.sh
+```
+
+Press `Ctrl+C` to stop everything and clean up.
+
+**Option B – Manual steps**
+
+1. Start the Firestore emulator (requires Docker or `gcloud`).  
+   The easiest way is with Docker:
+
+   ```bash
+   docker run -d --name firestore-emulator -p 8085:8085 \
+     google/cloud-sdk:emulators \
+     gcloud beta emulators firestore start --host-port=0.0.0.0:8085
+   ```
+
+2. Set the required environment variables and run the server:
+
+   ```bash
+   export FIRESTORE_EMULATOR_HOST=localhost:8085
+   export GOOGLE_CLOUD_PROJECT=demo-project
+   go run ./cmd/main.go
+   ```
+
+3. In another terminal, run the smoke test against the local server:
+
+   ```bash
+   ./smoke_test.sh http://localhost:8080
+   ```
+
+> **Note:** The emulator does not persist data between restarts.
+```
 
 ### Build & Run the Binary
 
@@ -147,24 +209,37 @@ curl -H "Authorization: Bearer swordfish" \
 
 ### Deploy
 
-Copy and customise the deployment script, then run it:
+The included `deploy.sh` script handles the complete deployment. It reads
+configuration from environment variables (with sensible defaults for some).
+
+**Required variables**
+
+| Variable | Purpose |
+|----------|---------|
+| `PROJECT_ID` | Your Google Cloud project ID |
+| `SERVICE_NAME` | Cloud Run service name (e.g., `eventserver`) |
+| `API_BEARER_KEY` | The token used to secure your API (set via `API_TOKEN` on the server) |
+| `REGION` | (optional) Deployment region, defaults to `us-east4` |
+
+**Example**
 
 ```bash
-cp deploy.sh.example deploy.sh
-# Edit PROJECT_ID, REGION, SERVICE_NAME, and API_BEARER_KEY inside deploy.sh
-chmod +x deploy.sh
+export PROJECT_ID=thorsphere-trading-stg
+export SERVICE_NAME=eventserver
+export API_BEARER_KEY=your-super-secret-token
 ./deploy.sh
 ```
 
-The script sets `GOOGLE_CLOUD_PROJECT` and `API_TOKEN` environment variables
-automatically. The server will detect Cloud Run and connect to Firestore.
+The script sets `GOOGLE_CLOUD_PROJECT` and `API_TOKEN` automatically,
+ensures the `eventdb` Firestore database exists, and prints the service URL
+at the end.
 
-Once deployed, you can verify the service with the smoke test script:
+**Automated deployments** are handled by the GitHub Actions workflow
+(`.github/workflows/deploy.yml`), which uses the same `deploy.sh` script.
+
+Once deployed, verify with the smoke test:
 
 ```bash
-cp smoke_test.sh.example smoke_test.sh
-# Replace the placeholder token inside smoke_test.sh
-chmod +x smoke_test.sh
 ./smoke_test.sh https://your-service.run.app
 ```
 

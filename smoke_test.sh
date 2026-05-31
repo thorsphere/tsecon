@@ -23,7 +23,7 @@ fi
 
 # Strip trailing slash from URL if present (e.g. from copy-pasting)
 SERVICE_URL="${1%/}"
-API_BEARER_KEY="${API_BEARER_KEY:-your-super-secret-api-token}" 
+API_BEARER_KEY="${API_BEARER_KEY:-all-your-base-are-belong-to-us}" 
 
 echo -e "Testing against Service URL: $SERVICE_URL\n"
 
