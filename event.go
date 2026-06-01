@@ -11,6 +11,7 @@ import (
 	"time"          // time for handling event timestamps and periods
 
 	"github.com/thorsphere/lpstats" // lpstats for utility functions to compare float pointers and format them as strings
+	"github.com/thorsphere/tstable" // tstable for formatting tables
 )
 
 // EconomicEvent represents a single calendar event with its details.
@@ -47,14 +48,41 @@ func NewPeriodForDate(date time.Time) *Period {
 }
 
 // String returns a formatted string representation of the Event.
-// Todo: Use tstable package to print as a table
 func (ev Event) String() string {
-	t := fmt.Sprintf("%d: %s (%s) at %s - Impact: %s", ev.ID, ev.Name, ev.Country, ev.Time.Format(time.RFC3339), ev.Impact.String())
-	t += "\n  Actual: " + lpstats.FmtFloatPtr(ev.Actual) + " " + ev.Unit
-	t += "\n  Estimate: " + lpstats.FmtFloatPtr(ev.Estimate) + " " + ev.Unit
-	t += "\n  Previous: " + lpstats.FmtFloatPtr(ev.Previous) + " " + ev.Unit
-	t += "\n  Source: " + ev.Source
-	return t
+	// Create a new table
+	tbl, err := tstable.New([]string{"Event", ev.Name})
+	// If there is an error, return an empty string
+	if err != nil {
+		return ""
+	}
+	// Add the event details to the table
+	tbl.AddRow([]string{"Country", ev.Country})
+	tbl.AddRow([]string{"Time", ev.Time.Format(time.RFC3339)})
+	tbl.AddRow([]string{"Impact", ev.Impact.String()})
+	// Format the actual, estimate, and previous values as strings
+	var vAct, vEst, vPrev string
+	// If the actual value is not nil, format it as a string
+	if ev.Actual != nil {
+		vAct = lpstats.FmtFloatPtr(ev.Actual) + " " + ev.Unit
+	}
+	// Add the actual value to the table
+	tbl.AddRow([]string{"Actual", vAct})
+	// If the estimate value is not nil, format it as a string
+	if ev.Estimate != nil {
+		vEst = lpstats.FmtFloatPtr(ev.Estimate) + " " + ev.Unit
+	}
+	// Add the estimate value to the table
+	tbl.AddRow([]string{"Estimate", vEst})
+	// If the previous value is not nil, format it as a string
+	if ev.Previous != nil {
+		vPrev = lpstats.FmtFloatPtr(ev.Previous) + " " + ev.Unit
+	}
+	// Add the previous value to the table
+	tbl.AddRow([]string{"Previous", vPrev})
+	// Add the source to the table
+	tbl.AddRow([]string{"Source", ev.Source})
+	// Return the formatted table as a string
+	return tbl.String()
 }
 
 // NearEqual compares two Event instances for near-equality, taking into account all fields including

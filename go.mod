@@ -5,9 +5,10 @@ go 1.26
 require (
 	cloud.google.com/go/firestore v1.22.0
 	github.com/thorsphere/lpstats v1.4.0
-	github.com/thorsphere/tserr v1.19.1
+	github.com/thorsphere/tserr v1.19.2
 	github.com/thorsphere/tsfio v1.8.0
 	github.com/thorsphere/tslog v1.3.2
+	github.com/thorsphere/tstable v1.1.1
 	google.golang.org/api v0.282.0
 )
 
