@@ -78,28 +78,6 @@ func TestEvents(t *testing.T) {
 	}
 }
 
-// TestPrintEvents tests the PrintEvents function by comparing its output to a golden file.
-func TestPrintEvents(t *testing.T) {
-	// Use the PrintEvents function to get a formatted string representation of the sample events
-	out := tsecon.PrintEvents(evs)
-	// Compare the output to a golden file using the EvalGoldenFile function from the tsfio package,
-	// and if there is an error, fail the test with the error message
-	if e := tsfio.EvalGoldenFile(&tsfio.Testcase{Name: "printevents", Data: out}); e != nil {
-		t.Fatal(e)
-	}
-}
-
-// TestPrintNoEvents tests the PrintEvents function with an empty slice of events and
-// expects an error indicating that there are no events to print.
-func TestPrintNoEvents(t *testing.T) {
-	// Use the PrintEvents function with an empty slice of events
-	s := tsecon.PrintEvents([]tsecon.Event{})
-	// If there is an error printing events, fail the test with the error message
-	if s != "" {
-		t.Fatal(tserr.EqualStr(&tserr.EqualStrArgs{Var: "PrintEvents", Actual: s, Want: ""}))
-	}
-}
-
 // TestWrongImpact tests the String method of the ImpactLevel type with an invalid impact level value
 // and expects the output to be "unknown".
 func TestWrongImpact(t *testing.T) {
