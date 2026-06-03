@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a potential security vulnerability in tsecon, please report it responsibly. Do not disclose the issue publicly until it has been addressed.
+If you discover a potential security vulnerability in tseventserver, please report it responsibly. Do not disclose the issue publicly until it has been addressed.
 
 - Contact: Send an email with all relevant details (including steps to reproduce) to security at thorsphere.com.
 - Response Time: You can expect an acknowledgment within a few days.
@@ -16,4 +16,4 @@ If you discover a potential security vulnerability in tsecon, please report it r
 
 ## Questions
 
-For general questions about security, start a [discussion](https://github.com/thorsphere/tsecon/discussions).
+For general questions about security, start a [discussion](https://github.com/thorsphere/tseventserver/discussions).

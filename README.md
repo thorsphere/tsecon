@@ -1,23 +1,23 @@
-# tsecon
+# tseventserver
 
-[![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/thorsphere/tsecon)](https://pkg.go.dev/mod/github.com/thorsphere/tsecon)
-![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/thorsphere/tsecon)
+[![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/thorsphere/tseventserver)](https://pkg.go.dev/mod/github.com/thorsphere/tseventserver)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/thorsphere/tseventserver)
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/thorsphere/tsecon)](https://goreportcard.com/report/github.com/thorsphere/tsecon)
-[![CodeFactor](https://www.codefactor.io/repository/github/thorsphere/tsecon/badge)](https://www.codefactor.io/repository/github/thorsphere/tsecon)
-![OSS Lifecycle](https://img.shields.io/osslifecycle/thorsphere/tsecon)
-![Libraries.io dependency status for GitHub repo](https://img.shields.io/librariesio/github/thorsphere/tsecon)
+[![Go Report Card](https://goreportcard.com/badge/github.com/thorsphere/tseventserver)](https://goreportcard.com/report/github.com/thorsphere/tseventserver)
+[![CodeFactor](https://www.codefactor.io/repository/github/thorsphere/tseventserver/badge)](https://www.codefactor.io/repository/github/thorsphere/tseventserver)
+![OSS Lifecycle](https://img.shields.io/osslifecycle/thorsphere/tseventserver)
+![Libraries.io dependency status for GitHub repo](https://img.shields.io/librariesio/github/thorsphere/tseventserver)
 
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/thorsphere/tsecon)
-![GitHub last commit](https://img.shields.io/github/last-commit/thorsphere/tsecon)
-![GitHub commit activity](https://img.shields.io/github/commit-activity/m/thorsphere/tsecon)
-![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/thorsphere/tsecon)
-![GitHub Top Language](https://img.shields.io/github/languages/top/thorsphere/tsecon)
-![GitHub](https://img.shields.io/github/license/thorsphere/tsecon)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/thorsphere/tseventserver)
+![GitHub last commit](https://img.shields.io/github/last-commit/thorsphere/tseventserver)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/thorsphere/tseventserver)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/thorsphere/tseventserver)
+![GitHub Top Language](https://img.shields.io/github/languages/top/thorsphere/tseventserver)
+![GitHub](https://img.shields.io/github/license/thorsphere/tseventserver)
 
 ---
 
-**tsecon** is a Go package for ingesting and querying economic calendar events.  
+**tseventserver** is a Go package for ingesting and querying economic calendar events.  
 It provides an HTTP API backed by Google Cloud Firestore, with a token‑authenticated  
 retrieval endpoint.
 
@@ -47,8 +47,8 @@ retrieval endpoint.
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/tsecon.git
-cd tsecon
+git clone https://github.com/your-org/tseventserver.git
+cd tseventserver
 
 # Start the Firestore emulator (in a separate terminal)
 gcloud emulators firestore start --host-port=localhost:8081

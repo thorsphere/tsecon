@@ -4,7 +4,7 @@
 package main
 
 // Import necessary packages for context handling, OS signal processing, time management,
-// and the tsecon, tserr, and tslog packages from the thorsphere project.
+// and the tseventserver, tserr, and tslog packages from the thorsphere project.
 import (
 	"context"   // context
 	"fmt"       // fmt
@@ -14,9 +14,9 @@ import (
 	"syscall"   // syscall
 	"time"      // time
 
-	"github.com/thorsphere/tsecon" // tsecon
-	"github.com/thorsphere/tserr"  // tserr
-	"github.com/thorsphere/tslog"  // tslog
+	"github.com/thorsphere/tseventserver" // tseventserver
+	"github.com/thorsphere/tserr"  		  // tserr
+	"github.com/thorsphere/tslog"  		  // tslog
 )
 
 const (
@@ -61,7 +61,7 @@ func main() {
 		os.Exit(1)
 	}
 	// Initialize the FirestoreEventRepository with the project ID.
-	repo, err := tsecon.NewFirestoreEventRepository(context.Background(), projectID)
+	repo, err := tseventserver.NewFirestoreEventRepository(context.Background(), projectID)
 	// If there was an error initializing the repository, log the error and exit the application with a non-zero status code to indicate failure.
 	if err != nil {
 		// Log the error using tslog and exit the application with a non-zero status code to indicate failure.
@@ -72,7 +72,7 @@ func main() {
 	// which will release any resources associated with the repository, such as database connections.
 	defer repo.Close()
 	// Create a new EventServer instance with the initialized repository.
-	api := tsecon.NewEventServer(repo, tok)
+	api := tseventserver.NewEventServer(repo, tok)
 	// Configure the HTTP server with the EventServer as the handler, and set reasonable timeouts for read and write operations.
 	srv := &http.Server{
 		Addr:         serverAddr,

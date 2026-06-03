@@ -1,4 +1,4 @@
-# Contributing to tsecon
+# Contributing to tseventserver
 
 First, thanks for taking the time! Everyone is welcomed to contribute!
 
@@ -6,8 +6,8 @@ First, thanks for taking the time! Everyone is welcomed to contribute!
 
 - **Report bugs or propose improvements:** Please open issues or pull requests on GitHub.
 - **Contribute code:** Please open pull requests on GitHub to contribute to the source code.
-- **Large features:** If you consider contributing large new features, please start a [discussion](https://github.com/thorsphere/tsecon/discussions) before beginning implementation to align on the approach.
-- **Questions:** If you have a question, please start a [discussion](https://github.com/thorsphere/tsecon/discussions).
+- **Large features:** If you consider contributing large new features, please start a [discussion](https://github.com/thorsphere/tseventserver/discussions) before beginning implementation to align on the approach.
+- **Questions:** If you have a question, please start a [discussion](https://github.com/thorsphere/tseventserver/discussions).
 
 ## Pull Requests
 

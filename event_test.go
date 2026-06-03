@@ -1,22 +1,22 @@
 // Copyright (c) 2026 thorsphere.
 // All Rights Reserved. Use is governed with GNU Affero General Public Licence v3.0
 // that can be found in the LICENSE file.
-package tsecon_test
+package tseventserver_test
 
-// Import standard library packages, tsecon, tsfio and tserrs
+// Import standard library packages, tseventserver, tsfio and tserrs
 import (
 	"strings" // strings for building string output in tests
 	"testing" // testing for writing test cases
 	"time"    // time for working with time and dates
 
-	"github.com/thorsphere/tsecon" // tsecon for the package being tested
-	"github.com/thorsphere/tserr"  // tserr for custom error handling
-	"github.com/thorsphere/tsfio"  // tsfio for file input/output operations, including handling golden files
+	"github.com/thorsphere/tseventserver" 	// tseventserver for the package being tested
+	"github.com/thorsphere/tserr"  			// tserr for custom error handling
+	"github.com/thorsphere/tsfio"  			// tsfio for file input/output operations, including handling golden files
 )
 
 var (
 	// Define some sample events for testing purposes
-	evNfp tsecon.Event = tsecon.Event{
+	evNfp tseventserver.Event = tseventserver.Event{
 		Name:     "Non-Farm Payrolls",
 		Time:     time.Date(2024, 7, 5, 8, 30, 0, 0, time.UTC),
 		Country:  "US",
@@ -24,10 +24,10 @@ var (
 		Estimate: new(180.0),
 		Previous: new(150.0),
 		Unit:     "K",
-		Impact:   tsecon.ImpactHigh,
+		Impact:   tseventserver.ImpactHigh,
 		Source:   "Bureau of Labor Statistics",
 	}
-	evGdp24 tsecon.Event = tsecon.Event{
+	evGdp24 tseventserver.Event = tseventserver.Event{
 		Name:     "GDP Growth Rate",
 		Time:     time.Date(2024, 7, 10, 8, 30, 0, 0, time.UTC),
 		Country:  "US",
@@ -35,10 +35,10 @@ var (
 		Estimate: new(3.0),
 		Previous: new(2.8),
 		Unit:     "%",
-		Impact:   tsecon.ImpactMedium,
+		Impact:   tseventserver.ImpactMedium,
 		Source:   "Bureau of Economic Analysis",
 	}
-	evGdp30 tsecon.Event = tsecon.Event{
+	evGdp30 tseventserver.Event = tseventserver.Event{
 		Name:     "GDP Growth Rate",
 		Time:     time.Date(2030, 7, 10, 8, 30, 0, 0, time.UTC),
 		Country:  "US",
@@ -46,17 +46,17 @@ var (
 		Estimate: nil,
 		Previous: nil,
 		Unit:     "%",
-		Impact:   tsecon.ImpactLow,
+		Impact:   tseventserver.ImpactLow,
 		Source:   "Bureau of Economic Analysis",
 	}
 	// Define a slice of events for testing purposes
-	evs []tsecon.Event = []tsecon.Event{
+	evs []tseventserver.Event = []tseventserver.Event{
 		evNfp,
 		evGdp24,
 		evGdp30,
 	}
 	// Define a sample period for testing purposes
-	per *tsecon.Period = &tsecon.Period{
+	per *tseventserver.Period = &tseventserver.Period{
 		From: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		To:   time.Date(2025, 7, 31, 23, 59, 59, 0, time.UTC),
 	}
@@ -81,7 +81,7 @@ func TestEvents(t *testing.T) {
 // TestWrongImpact tests the String method of the ImpactLevel type with an invalid impact level value
 // and expects the output to be "unknown".
 func TestWrongImpact(t *testing.T) {
-	var i tsecon.ImpactLevel = 99 // Invalid impact level
+	var i tseventserver.ImpactLevel = 99 // Invalid impact level
 	// The expected output for an invalid impact level should be "unknown"
 	expected := "unknown"
 	// Get the actual string representation of the impact level using the String method

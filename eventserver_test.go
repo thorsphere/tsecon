@@ -1,9 +1,9 @@
 // Copyright (c) 2026 thorsphere.
 // All Rights Reserved. Use is governed with GNU Affero General Public License v3.0
 // that can be found in the LICENSE file.
-package tsecon_test
+package tseventserver_test
 
-// Import standard library packages, tsecon and tserr
+// Import standard library packages, tseventserver and tserr
 import (
 	"bytes" // context
 	"context"
@@ -12,27 +12,27 @@ import (
 	"net/http/httptest" // httptest
 	"testing"           // testing
 
-	"github.com/thorsphere/tsecon" // tsecon
-	"github.com/thorsphere/tserr"  // tserr
+	"github.com/thorsphere/tseventserver" 	// tseventserver
+	"github.com/thorsphere/tserr"  			// tserr
 )
 
 const (
 	tok = "all-your-base-are-belong-to-us" // Dummy token for testing authentication
 )
 
-// mockRepo is an in-memory implementation of tsecon.EventRepository for testing.
+// mockRepo is an in-memory implementation of tseventserver.EventRepository for testing.
 type mockRepo struct {
-	events map[string]*tsecon.Event // map of events by ID
+	events map[string]*tseventserver.Event // map of events by ID
 }
 
 // newMockRepo creates a new mockRepo instance.
 func newMockRepo() *mockRepo {
 	// Create a new mockRepo instance
-	return &mockRepo{events: make(map[string]*tsecon.Event)}
+	return &mockRepo{events: make(map[string]*tseventserver.Event)}
 }
 
 // Store adds an event to the mockRepo's events map.
-func (m *mockRepo) Store(ctx context.Context, ev *tsecon.Event) error {
+func (m *mockRepo) Store(ctx context.Context, ev *tseventserver.Event) error {
 	// Check if the repository instance is nil
 	if m == nil {
 		return tserr.NilPtr()
@@ -48,7 +48,7 @@ func (m *mockRepo) Store(ctx context.Context, ev *tsecon.Event) error {
 }
 
 // GetByPeriod retrieves events from the mockRepo's events map based on the provided period.
-func (m *mockRepo) GetByPeriod(ctx context.Context, period *tsecon.Period) ([]tsecon.Event, error) {
+func (m *mockRepo) GetByPeriod(ctx context.Context, period *tseventserver.Period) ([]tseventserver.Event, error) {
 	// Check if the repository instance is nil
 	if m == nil {
 		return nil, tserr.NilPtr()
@@ -58,7 +58,7 @@ func (m *mockRepo) GetByPeriod(ctx context.Context, period *tsecon.Period) ([]ts
 		return nil, tserr.NilPtr()
 	}
 	// Create a slice of events that match the period
-	var result []tsecon.Event
+	var result []tseventserver.Event
 	// Iterate over the events in the mockRepo's events map
 	for _, ev := range m.events {
 		// Check if the event's time is within the specified period
@@ -69,7 +69,7 @@ func (m *mockRepo) GetByPeriod(ctx context.Context, period *tsecon.Period) ([]ts
 	}
 	// If the result slice is empty, return an empty slice
 	if result == nil {
-		result = []tsecon.Event{}
+		result = []tseventserver.Event{}
 	}
 	// Return the slice of events that match the specified period
 	return result, nil
@@ -81,13 +81,13 @@ func (m *mockRepo) Close() error {
 }
 
 // setupTestServer sets up a test server and returns the base URL and the mockRepo instance.
-func setupTestServer(t *testing.T) (string, tsecon.EventRepository) {
+func setupTestServer(t *testing.T) (string, tseventserver.EventRepository) {
 	// Use t.Helper() to call t.Fatal if any of the following steps fail
 	t.Helper()
 	// Create a new mockRepo instance
 	repo := newMockRepo()
 	// Create a new EventServer instance with the mockRepo
-	server := tsecon.NewEventServer(repo, tok)
+	server := tseventserver.NewEventServer(repo, tok)
 	// Create a new HTTP test server with the EventServer
 	ts := httptest.NewServer(server)
 	// Close the test server to clean up resources

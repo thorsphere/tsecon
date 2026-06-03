@@ -1,4 +1,4 @@
-// Package tsecon provides the core types and interfaces for economic calendar events,
+// Package tseventserver provides the core types and interfaces for economic calendar events,
 // including an HTTP‑based ingestion and retrieval server, and pluggable storage backends
 // (SQLite and Google Cloud Firestore).
 //
@@ -15,16 +15,16 @@
 //
 // Create a repository, then start the server:
 //
-//	repo, err := tsecon.NewSQLiteEventRepository("events.db")
+//	repo, err := tseventserver.NewSQLiteEventRepository("events.db")
 //	// ... error handling ...
 //	defer repo.Close()
-//	api := tsecon.NewEventServer(repo, "your-api-token")
+//	api := tseventserver.NewEventServer(repo, "your-api-token")
 //	http.ListenAndServe(":8080", api)
 //
 // Copyright (c) 2026 thorsphere.
 // All Rights Reserved. Use is governed with GNU Affero General Public License v3.0
 // that can be found in the LICENSE file.
-package tsecon
+package tseventserver
 
 // Import necessary packages for JSON handling, HTTP server functionality,
 // and custom error and logging utilities from the thorsphere project.

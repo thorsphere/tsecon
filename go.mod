@@ -1,4 +1,4 @@
-module github.com/thorsphere/tsecon
+module github.com/thorsphere/tseventserver
 
 go 1.26
 

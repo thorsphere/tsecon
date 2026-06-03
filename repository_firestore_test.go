@@ -1,7 +1,7 @@
 // Copyright (c) 2026 thorsphere.
 // All Rights Reserved. Use is governed with GNU Affero General Public License v3.0
 // that can be found in the LICENSE file.
-package tsecon_test
+package tseventserver_test
 
 // Import standard library packages and third-party packages for context management, testing, and custom error handling.
 import (
@@ -10,12 +10,12 @@ import (
 	"testing" // testing for writing unit tests in Go
 	"time"    // time for working with time and dates in tests
 
-	"github.com/thorsphere/tsecon" // tsecon is the package being tested, which contains the FirestoreEventRepository implementation.
-	"github.com/thorsphere/tserr"  // tserr for custom error handling in tests, allowing for better error messages and context when tests fail.
+	"github.com/thorsphere/tseventserver" 	// tseventserver is the package being tested, which contains the FirestoreEventRepository implementation.
+	"github.com/thorsphere/tserr"  			// tserr for custom error handling in tests, allowing for better error messages and context when tests fail.
 )
 
 // setupFirestore is a helper function that initializes a FirestoreEventRepository for testing purposes.
-func setupFirestore(t *testing.T) (*tsecon.FirestoreEventRepository, func()) {
+func setupFirestore(t *testing.T) (*tseventserver.FirestoreEventRepository, func()) {
 	// Check environment variables to determine if we should run Firestore tests against an emulator or a real Firestore instance.
 	emulatorHost := os.Getenv("FIRESTORE_EMULATOR_HOST")
 	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
@@ -31,7 +31,7 @@ func setupFirestore(t *testing.T) (*tsecon.FirestoreEventRepository, func()) {
 	// Create a context for initializing the FirestoreEventRepository, which will be used to manage timeouts and cancellation if needed.
 	ctx := context.Background()
 	// Create a new instance of FirestoreEventRepository using the setup context and project ID.
-	repo, err := tsecon.NewFirestoreEventRepository(ctx, projectID)
+	repo, err := tseventserver.NewFirestoreEventRepository(ctx, projectID)
 	if err != nil {
 		t.Fatal(tserr.Op(&tserr.OpArgs{Op: "NewFirestoreEventRepository", Fn: projectID, Err: err}))
 	}
@@ -45,7 +45,7 @@ func setupFirestore(t *testing.T) (*tsecon.FirestoreEventRepository, func()) {
 
 // TestFirestoreCloseNil1 tests the Close method when called on a nil pointer.
 func TestFirestoreCloseNil1(t *testing.T) {
-	var repo *tsecon.FirestoreEventRepository = nil
+	var repo *tseventserver.FirestoreEventRepository = nil
 	if err := repo.Close(); err == nil {
 		t.Fatal(tserr.NilFailed("Close"))
 	}
@@ -53,7 +53,7 @@ func TestFirestoreCloseNil1(t *testing.T) {
 
 // TestFirestoreCloseNil2 tests the Close method on an uninitialized pointer (nil client).
 func TestFirestoreCloseNil2(t *testing.T) {
-	var repo *tsecon.FirestoreEventRepository = &tsecon.FirestoreEventRepository{}
+	var repo *tseventserver.FirestoreEventRepository = &tseventserver.FirestoreEventRepository{}
 	if err := repo.Close(); err == nil {
 		t.Fatal(tserr.NilFailed("Close"))
 	}
@@ -61,7 +61,7 @@ func TestFirestoreCloseNil2(t *testing.T) {
 
 // TestFirestoreStoreNil1 tests Store on a nil repository pointer.
 func TestFirestoreStoreNil1(t *testing.T) {
-	var repo *tsecon.FirestoreEventRepository = nil
+	var repo *tseventserver.FirestoreEventRepository = nil
 	if err := repo.Store(context.Background(), &evNfp); err == nil {
 		t.Fatal(tserr.NilFailed("Store"))
 	}
@@ -69,7 +69,7 @@ func TestFirestoreStoreNil1(t *testing.T) {
 
 // TestFirestoreStoreNil2 tests Store on an uninitialized repository.
 func TestFirestoreStoreNil2(t *testing.T) {
-	var repo *tsecon.FirestoreEventRepository = &tsecon.FirestoreEventRepository{}
+	var repo *tseventserver.FirestoreEventRepository = &tseventserver.FirestoreEventRepository{}
 	if err := repo.Store(context.Background(), &evNfp); err == nil {
 		t.Fatal(tserr.NilFailed("Store"))
 	}
@@ -86,7 +86,7 @@ func TestFirestoreStoreNil3(t *testing.T) {
 
 // TestFirestoreGetByPeriodNil1 tests GetByPeriod on a nil repository pointer.
 func TestFirestoreGetByPeriodNil1(t *testing.T) {
-	var repo *tsecon.FirestoreEventRepository = nil
+	var repo *tseventserver.FirestoreEventRepository = nil
 	if _, err := repo.GetByPeriod(context.Background(), per); err == nil {
 		t.Fatal(tserr.NilFailed("GetByPeriod"))
 	}
@@ -94,7 +94,7 @@ func TestFirestoreGetByPeriodNil1(t *testing.T) {
 
 // TestFirestoreGetByPeriodNil2 tests GetByPeriod on an uninitialized repository.
 func TestFirestoreGetByPeriodNil2(t *testing.T) {
-	var repo *tsecon.FirestoreEventRepository = &tsecon.FirestoreEventRepository{}
+	var repo *tseventserver.FirestoreEventRepository = &tseventserver.FirestoreEventRepository{}
 	if _, err := repo.GetByPeriod(context.Background(), per); err == nil {
 		t.Fatal(tserr.NilFailed("GetByPeriod"))
 	}
@@ -125,7 +125,7 @@ func TestFirestoreStoreAndGetByPeriod(t *testing.T) {
 	// 2. Retrieve events by the date of the stored event
 	// We create a period that encompasses the date of the stored event to ensure
 	// that it will be included in the results when we query by period.
-	period := tsecon.NewPeriodForDate(ev.Time)
+	period := tseventserver.NewPeriodForDate(ev.Time)
 	// We use GetByPeriod instead of GetByDate to align with the current repository implementation and
 	// to ensure that we are testing the correct retrieval method.
 	events, err := repo.GetByPeriod(context.Background(), period)
@@ -162,7 +162,7 @@ func TestFirestoreGetByPeriodEmpty(t *testing.T) {
 	// Defer the cleanup function to ensure that resources are released after the test, even if it fails.
 	defer cleanup()
 	// Define a period far in the future where no events should exist
-	p := &tsecon.Period{
+	p := &tseventserver.Period{
 		From: time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 		To:   time.Date(2100, 12, 31, 23, 59, 59, 0, time.UTC),
 	}
