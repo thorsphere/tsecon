@@ -14,6 +14,29 @@ import (
 	"github.com/thorsphere/tserr"  			// tserr for custom error handling in tests, allowing for better error messages and context when tests fail.
 )
 
+// tip is the help text shown when Firestore connectivity isn't set up.
+const tip = `Firestore emulator not found.
+
+To run these tests, you need a Firestore emulator. Start it with Docker:
+
+    docker run -d --name firestore-emulator \
+        -p 8081:8081 \
+        google/cloud-sdk:emulators \
+        gcloud beta emulators firestore start --host-port="0.0.0.0:8081"
+
+Then set the environment variable and run the tests:
+
+    export FIRESTORE_EMULATOR_HOST=localhost:8081
+    go test -v ./...
+
+Or use the convenience script:
+
+    ./test_firestore.sh
+
+Alternatively, to test against a real Firestore project, set GOOGLE_CLOUD_PROJECT
+and ensure your application default credentials are available.
+`
+
 // setupFirestore is a helper function that initializes a FirestoreEventRepository for testing purposes.
 func setupFirestore(t *testing.T) (*tseventserver.FirestoreEventRepository, func()) {
 	// Check environment variables to determine if we should run Firestore tests against an emulator or a real Firestore instance.
@@ -21,7 +44,7 @@ func setupFirestore(t *testing.T) (*tseventserver.FirestoreEventRepository, func
 	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
 	// If neither the emulator host nor the project ID is set, skip the Firestore tests to avoid failures due to missing configuration.
 	if emulatorHost == "" && projectID == "" {
-		t.Skip(tserr.NotSet("neither FIRESTORE_EMULATOR_HOST nor GOOGLE_CLOUD_PROJECT"))
+		t.Fatal(tip)
 	}
 	// If the emulator host is set, but project ID is not, we can default to a dummy value
 	// since the emulator does not require a real project ID.
@@ -77,8 +100,7 @@ func TestFirestoreStoreNil2(t *testing.T) {
 
 // TestFirestoreStoreNil3 tests Store when the event is nil.
 func TestFirestoreStoreNil3(t *testing.T) {
-	repo, cleanup := setupFirestore(t)
-	defer cleanup()
+	var repo *tseventserver.FirestoreEventRepository = &tseventserver.FirestoreEventRepository{}
 	if err := repo.Store(context.Background(), nil); err == nil {
 		t.Fatal(tserr.NilFailed("Store"))
 	}
@@ -102,8 +124,7 @@ func TestFirestoreGetByPeriodNil2(t *testing.T) {
 
 // TestFirestoreGetByPeriodNil3 tests GetByPeriod when the passed period is nil.
 func TestFirestoreGetByPeriodNil3(t *testing.T) {
-	repo, cleanup := setupFirestore(t)
-	defer cleanup()
+	var repo *tseventserver.FirestoreEventRepository = &tseventserver.FirestoreEventRepository{}
 	if _, err := repo.GetByPeriod(context.Background(), nil); err == nil {
 		t.Fatal(tserr.NilFailed("GetByPeriod"))
 	}

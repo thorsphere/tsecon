@@ -41,35 +41,9 @@ retrieval endpoint.
 
 - **Go 1.26+**
 - A **Firestore** database (or the **Firestore emulator** for local development)
+- **Docker** (for running the emulator via script)
 - (Optional) **gcloud CLI** for deployment to Cloud Run
 
-### Local Development with the Firestore Emulator
-
-```bash
-# Clone the repository
-git clone https://github.com/your-org/tseventserver.git
-cd tseventserver
-
-# Start the Firestore emulator (in a separate terminal)
-gcloud emulators firestore start --host-port=localhost:8081
-
-# Set the emulator host and run the server
-export FIRESTORE_EMULATOR_HOST=localhost:8081
-go run ./cmd/main.go
-```
-
-Once the server is running, you can verify it with the local smoke test:
-
-```bash
-./smoke_test_local.sh
-```
-
-> **Note:** The emulator does not persist data between restarts.
-```
-
-With this (using `run_local.sh` for the all‑in‑one approach, and also showing the manual way):
-
-```markdown
 ### Local Development with the Firestore Emulator
 
 **Option A – One‑command runner (recommended)**
@@ -85,19 +59,18 @@ Press `Ctrl+C` to stop everything and clean up.
 
 **Option B – Manual steps**
 
-1. Start the Firestore emulator (requires Docker or `gcloud`).  
-   The easiest way is with Docker:
+1. Start the Firestore emulator:
 
    ```bash
-   docker run -d --name firestore-emulator -p 8085:8085 \
+   docker run -d --name firestore-emulator -p 8081:8081 \
      google/cloud-sdk:emulators \
-     gcloud beta emulators firestore start --host-port=0.0.0.0:8085
+     gcloud beta emulators firestore start --host-port=0.0.0.0:8081
    ```
 
 2. Set the required environment variables and run the server:
 
    ```bash
-   export FIRESTORE_EMULATOR_HOST=localhost:8085
+   export FIRESTORE_EMULATOR_HOST=localhost:8081
    export GOOGLE_CLOUD_PROJECT=demo-project
    go run ./cmd/main.go
    ```
@@ -109,7 +82,6 @@ Press `Ctrl+C` to stop everything and clean up.
    ```
 
 > **Note:** The emulator does not persist data between restarts.
-```
 
 ### Build & Run the Binary
 
@@ -119,6 +91,38 @@ API_TOKEN=swordfish ./eventserver
 ```
 
 The server listens on port `8080` by default (`PORT` env var overrides it).
+
+---
+
+## Running Tests
+
+The unit tests (nil-pointer checks, event formatting) run without any setup:
+
+```bash
+go test -v ./...
+```
+
+The Firestore integration tests (`TestFirestoreStoreAndGetByPeriod` and
+`TestFirestoreGetByPeriodEmpty`) require a running emulator and will fail with
+clear instructions if one is not found. Use the convenience script to run them:
+
+```bash
+./test_firestore.sh
+```
+
+This starts a Firestore emulator container, runs all tests (including integration), and
+cleans up afterwards. If you prefer to run the emulator manually:
+
+```bash
+docker run -d --name firestore-emulator -p 8081:8081 \
+    google/cloud-sdk:emulators \
+    gcloud beta emulators firestore start --host-port=0.0.0.0:8081
+
+export FIRESTORE_EMULATOR_HOST=localhost:8081
+go test -v ./...
+
+docker rm -f firestore-emulator
+```
 
 ---
 
