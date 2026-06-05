@@ -34,8 +34,9 @@ import (
 	"net/http"      // net/http for HTTP server and client functionality
 	"time"          // time for handling timestamps and durations
 
-	"github.com/thorsphere/tserr" // tserr for custom error handling
-	"github.com/thorsphere/tslog" // tslog for logging utilities
+	"github.com/thorsphere/tserr" 		// tserr for custom error handling
+	"github.com/thorsphere/tslog" 		// tslog for logging utilities
+	"github.com/thorsphere/tstrading"	// tstrading for economic events
 )
 
 // EventServer is a struct that represents the event server responsible for handling event ingestion.
@@ -95,7 +96,7 @@ func (s *EventServer) ingestHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// Decode the JSON body into a slice of Event structs.
 	// If there is an error during decoding, return a bad request error.
-	var events []Event
+	var events []tstrading.Event
 	// Create a new JSON decoder for the request body and decode the JSON into the events slice.
 	decoder := json.NewDecoder(r.Body)
 	// If there is an error during decoding, return a bad request error with the error message.
@@ -134,14 +135,14 @@ func (s *EventServer) retrieveHandler(w http.ResponseWriter, r *http.Request) {
 	fromStr := r.URL.Query().Get("from")
 	toStr := r.URL.Query().Get("to")
 	// Initialize a Period pointer to define the time range for the database query
-	var period *Period
+	var period *tstrading.Period
 	if fromStr != "" && toStr != "" {
 		// Parse the provided query strings into time.Time objects using RFC3339 format
 		from, err1 := time.Parse(time.RFC3339, fromStr)
 		to, err2 := time.Parse(time.RFC3339, toStr)
 		// If both timestamps are valid, assign them to the period
 		if err1 == nil && err2 == nil {
-			period = &Period{From: from, To: to}
+			period = &tstrading.Period{From: from, To: to}
 		} else { // If parsing fails for either timestamp, return a 400 Bad Request error
 			http.Error(w, tserr.InvalidTimestampFormat(fmt.Errorf("%w %w", err1, err2)).Error(), http.StatusBadRequest)
 			return
@@ -149,7 +150,7 @@ func (s *EventServer) retrieveHandler(w http.ResponseWriter, r *http.Request) {
 	} else { // If no specific period is provided, default to retrieving events for the current day
 		now := time.Now()
 		startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-		period = &Period{From: startOfDay, To: startOfDay.AddDate(0, 0, 1)}
+		period = &tstrading.Period{From: startOfDay, To: startOfDay.AddDate(0, 0, 1)}
 	}
 	// Fetch the economic events from the repository for the determined time period
 	events, err := s.repo.GetByPeriod(r.Context(), period)

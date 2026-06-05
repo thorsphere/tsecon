@@ -3,17 +3,18 @@
 // that can be found in the LICENSE file.
 package tseventserver_test
 
-// Import standard library packages, tseventserver and tserr
+// Import standard library packages, tseventserver, tserr, and tstrading
 import (
-	"bytes" // context
-	"context"
+	"bytes"             // bytes
+	"context"           // context
 	"encoding/json"     // json
 	"net/http"          // http
 	"net/http/httptest" // httptest
 	"testing"           // testing
 
-	"github.com/thorsphere/tseventserver" 	// tseventserver
-	"github.com/thorsphere/tserr"  			// tserr
+	"github.com/thorsphere/tserr"         // tserr
+	"github.com/thorsphere/tseventserver" // tseventserver
+	"github.com/thorsphere/tstrading"     // tstrading
 )
 
 const (
@@ -22,17 +23,17 @@ const (
 
 // mockRepo is an in-memory implementation of tseventserver.EventRepository for testing.
 type mockRepo struct {
-	events map[string]*tseventserver.Event // map of events by ID
+	events map[string]*tstrading.Event // map of events by ID
 }
 
 // newMockRepo creates a new mockRepo instance.
 func newMockRepo() *mockRepo {
 	// Create a new mockRepo instance
-	return &mockRepo{events: make(map[string]*tseventserver.Event)}
+	return &mockRepo{events: make(map[string]*tstrading.Event)}
 }
 
 // Store adds an event to the mockRepo's events map.
-func (m *mockRepo) Store(ctx context.Context, ev *tseventserver.Event) error {
+func (m *mockRepo) Store(ctx context.Context, ev *tstrading.Event) error {
 	// Check if the repository instance is nil
 	if m == nil {
 		return tserr.NilPtr()
@@ -41,14 +42,19 @@ func (m *mockRepo) Store(ctx context.Context, ev *tseventserver.Event) error {
 	if ev == nil {
 		return tserr.NilPtr()
 	}
-	// Add the event to the mockRepo's events map
-	m.events[ev.GenerateDocID()] = ev
+	// Generate the deterministic ID (acts as your composite unique constraint)
+	docID, err := ev.GenerateDocID()
+	if err != nil {
+		return tserr.Op(&tserr.OpArgs{Op: "GenerateDocID", Fn: ev.Name, Err: err})
+	}
+	// Add the event to the mockRepo's events map using the deterministic ID
+	m.events[docID] = ev
 	// Return nil to indicate success
 	return nil
 }
 
 // GetByPeriod retrieves events from the mockRepo's events map based on the provided period.
-func (m *mockRepo) GetByPeriod(ctx context.Context, period *tseventserver.Period) ([]tseventserver.Event, error) {
+func (m *mockRepo) GetByPeriod(ctx context.Context, period *tstrading.Period) ([]tstrading.Event, error) {
 	// Check if the repository instance is nil
 	if m == nil {
 		return nil, tserr.NilPtr()
@@ -58,7 +64,7 @@ func (m *mockRepo) GetByPeriod(ctx context.Context, period *tseventserver.Period
 		return nil, tserr.NilPtr()
 	}
 	// Create a slice of events that match the period
-	var result []tseventserver.Event
+	var result []tstrading.Event
 	// Iterate over the events in the mockRepo's events map
 	for _, ev := range m.events {
 		// Check if the event's time is within the specified period
@@ -69,7 +75,7 @@ func (m *mockRepo) GetByPeriod(ctx context.Context, period *tseventserver.Period
 	}
 	// If the result slice is empty, return an empty slice
 	if result == nil {
-		result = []tseventserver.Event{}
+		result = []tstrading.Event{}
 	}
 	// Return the slice of events that match the specified period
 	return result, nil
@@ -192,7 +198,7 @@ func TestRetrieveHandler(t *testing.T) {
 	// Seed the database with our sample events before running retrieve tests
 	for _, ev := range evs {
 		e := ev // create a local copy to pass a stable pointer
-		if err := repo.Store(context.Background(), &e); err != nil {
+		if err := repo.Store(context.Background(), e); err != nil {
 			t.Fatal(tserr.Op(&tserr.OpArgs{Op: "repo.Store", Fn: ev.Name, Err: err}).Error())
 		}
 	}

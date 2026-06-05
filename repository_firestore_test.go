@@ -10,8 +10,9 @@ import (
 	"testing" // testing for writing unit tests in Go
 	"time"    // time for working with time and dates in tests
 
+	"github.com/thorsphere/tserr"         	// tserr for custom error handling in tests, allowing for better error messages and context when tests fail.
 	"github.com/thorsphere/tseventserver" 	// tseventserver is the package being tested, which contains the FirestoreEventRepository implementation.
-	"github.com/thorsphere/tserr"  			// tserr for custom error handling in tests, allowing for better error messages and context when tests fail.
+	"github.com/thorsphere/tstrading"		// tstrading for economic events
 )
 
 // tip is the help text shown when Firestore connectivity isn't set up.
@@ -36,6 +37,54 @@ Or use the convenience script:
 Alternatively, to test against a real Firestore project, set GOOGLE_CLOUD_PROJECT
 and ensure your application default credentials are available.
 `
+
+var (
+	// Define some sample events for testing purposes
+	evNfp *tstrading.Event = &tstrading.Event{
+		Name:     "Non-Farm Payrolls",
+		Time:     time.Date(2024, 7, 5, 8, 30, 0, 0, time.UTC),
+		Country:  "US",
+		Actual:   new(200.0),
+		Estimate: new(180.0),
+		Previous: new(150.0),
+		Unit:     "K",
+		Impact:   tstrading.ImpactHigh,
+		Source:   "Bureau of Labor Statistics",
+	}
+	evGdp24 *tstrading.Event = &tstrading.Event{
+		Name:     "GDP Growth Rate",
+		Time:     time.Date(2024, 7, 10, 8, 30, 0, 0, time.UTC),
+		Country:  "US",
+		Actual:   new(3.5),
+		Estimate: new(3.0),
+		Previous: new(2.8),
+		Unit:     "%",
+		Impact:   tstrading.ImpactMedium,
+		Source:   "Bureau of Economic Analysis",
+	}
+	evGdp30 *tstrading.Event = &tstrading.Event{
+		Name:     "GDP Growth Rate",
+		Time:     time.Date(2030, 7, 10, 8, 30, 0, 0, time.UTC),
+		Country:  "US",
+		Actual:   nil,
+		Estimate: nil,
+		Previous: nil,
+		Unit:     "%",
+		Impact:   tstrading.ImpactLow,
+		Source:   "Bureau of Economic Analysis",
+	}
+	// Define a slice of events for testing purposes
+	evs []*tstrading.Event = []*tstrading.Event{
+		evNfp,
+		evGdp24,
+		evGdp30,
+	}
+	// Define a sample period for testing purposes
+	per *tstrading.Period = &tstrading.Period{
+		From: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+		To:   time.Date(2025, 7, 31, 23, 59, 59, 0, time.UTC),
+	}
+)
 
 // setupFirestore is a helper function that initializes a FirestoreEventRepository for testing purposes.
 func setupFirestore(t *testing.T) (*tseventserver.FirestoreEventRepository, func()) {
@@ -85,7 +134,7 @@ func TestFirestoreCloseNil2(t *testing.T) {
 // TestFirestoreStoreNil1 tests Store on a nil repository pointer.
 func TestFirestoreStoreNil1(t *testing.T) {
 	var repo *tseventserver.FirestoreEventRepository = nil
-	if err := repo.Store(context.Background(), &evNfp); err == nil {
+	if err := repo.Store(context.Background(), evNfp); err == nil {
 		t.Fatal(tserr.NilFailed("Store"))
 	}
 }
@@ -93,7 +142,7 @@ func TestFirestoreStoreNil1(t *testing.T) {
 // TestFirestoreStoreNil2 tests Store on an uninitialized repository.
 func TestFirestoreStoreNil2(t *testing.T) {
 	var repo *tseventserver.FirestoreEventRepository = &tseventserver.FirestoreEventRepository{}
-	if err := repo.Store(context.Background(), &evNfp); err == nil {
+	if err := repo.Store(context.Background(), evNfp); err == nil {
 		t.Fatal(tserr.NilFailed("Store"))
 	}
 }
@@ -140,13 +189,13 @@ func TestFirestoreStoreAndGetByPeriod(t *testing.T) {
 	// Define a sample event for testing purposes
 	ev := evGdp24
 	// 1. Store the event
-	if err := repo.Store(context.Background(), &ev); err != nil {
+	if err := repo.Store(context.Background(), ev); err != nil {
 		t.Fatal(tserr.Op(&tserr.OpArgs{Op: "Store", Fn: "Firestore", Err: err}))
 	}
 	// 2. Retrieve events by the date of the stored event
 	// We create a period that encompasses the date of the stored event to ensure
 	// that it will be included in the results when we query by period.
-	period := tseventserver.NewPeriodForDate(ev.Time)
+	period := tstrading.NewPeriodForDate(ev.Time)
 	// We use GetByPeriod instead of GetByDate to align with the current repository implementation and
 	// to ensure that we are testing the correct retrieval method.
 	events, err := repo.GetByPeriod(context.Background(), period)
@@ -164,7 +213,7 @@ func TestFirestoreStoreAndGetByPeriod(t *testing.T) {
 		// Use NearEqual to compare the stored event with each retrieved event,
 		// which allows for a more flexible comparison that accounts for potential differences in
 		// how data is stored and retrieved from Firestore.
-		if ev.NearEqual(retrievedEv) {
+		if ev.NearEqual(&retrievedEv) {
 			// If a match is found, set found to true and break out of the loop.
 			found = true
 			break
@@ -183,7 +232,7 @@ func TestFirestoreGetByPeriodEmpty(t *testing.T) {
 	// Defer the cleanup function to ensure that resources are released after the test, even if it fails.
 	defer cleanup()
 	// Define a period far in the future where no events should exist
-	p := &tseventserver.Period{
+	p := &tstrading.Period{
 		From: time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 		To:   time.Date(2100, 12, 31, 23, 59, 59, 0, time.UTC),
 	}
@@ -196,7 +245,7 @@ func TestFirestoreGetByPeriodEmpty(t *testing.T) {
 	}
 	// Verify that no events were retrieved for the empty period, which is the expected outcome.
 	if len(events) != 0 {
-		t.Fatal(tserr.Equal(&tserr.EqualArgs{
+		t.Fatal(tserr.EqualInt(&tserr.EqualIntArgs{
 			Var:    "len(events)",
 			Actual: int64(len(events)),
 			Want:   0,

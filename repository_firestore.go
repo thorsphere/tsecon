@@ -8,9 +8,10 @@ import (
 	"context" // context for managing request contexts and timeouts
 	"time"    // time for working with time and dates
 
-	"cloud.google.com/go/firestore"  // firestore for interacting with Google Cloud Firestore
-	"github.com/thorsphere/tserr"    // tserr for custom error handling
-	"google.golang.org/api/iterator" // iterator for handling Firestore query results
+	"cloud.google.com/go/firestore" 	// firestore for interacting with Google Cloud Firestore
+	"github.com/thorsphere/tserr"   	// tserr for custom error handling
+	"github.com/thorsphere/tstrading"	// tstrading for economic events
+	"google.golang.org/api/iterator" 	// iterator for handling Firestore query results
 )
 
 const (
@@ -74,7 +75,7 @@ func (r *FirestoreEventRepository) Close() error {
 
 // Store saves a new economic event to the FirestoreEventRepository.
 // It generates a deterministic document ID to seamlessly perform an upsert.
-func (r *FirestoreEventRepository) Store(ctx context.Context, event *Event) error {
+func (r *FirestoreEventRepository) Store(ctx context.Context, event *tstrading.Event) error {
 	// Validate input parameters and return appropriate errors if any of them are nil.
 	if r == nil {
 		return tserr.NilPtr()
@@ -86,10 +87,14 @@ func (r *FirestoreEventRepository) Store(ctx context.Context, event *Event) erro
 		return tserr.NilPtr()
 	}
 	// Generate the deterministic ID (acts as your composite unique constraint)
-	docID := event.GenerateDocID()
+	docID, err := event.GenerateDocID()
+	// Handle any errors that occur during the generation of the deterministic ID
+	if err != nil {
+		return tserr.Op(&tserr.OpArgs{Op: "GenerateDocID", Fn: event.Name, Err: err})
+	}
 	// firestore.MergeAll performs the Upsert.
 	// If the doc exists, it updates differing fields. If not, it creates it.
-	_, err := r.client.Collection(colPath).Doc(docID).Set(ctx, event)
+	_, err = r.client.Collection(colPath).Doc(docID).Set(ctx, event)
 	if err != nil {
 		return tserr.Op(&tserr.OpArgs{Op: "firestore.Set", Fn: event.Name, Err: err})
 	}
@@ -98,7 +103,7 @@ func (r *FirestoreEventRepository) Store(ctx context.Context, event *Event) erro
 }
 
 // GetByPeriod retrieves economic events that occurred within a specified time period.
-func (r *FirestoreEventRepository) GetByPeriod(ctx context.Context, period *Period) ([]Event, error) {
+func (r *FirestoreEventRepository) GetByPeriod(ctx context.Context, period *tstrading.Period) ([]tstrading.Event, error) {
 	// Validate input parameters and return appropriate errors if any of them are nil.
 	if r == nil {
 		return nil, tserr.NilPtr()
@@ -110,7 +115,7 @@ func (r *FirestoreEventRepository) GetByPeriod(ctx context.Context, period *Peri
 		return nil, tserr.NilPtr()
 	}
 	// Initialize an empty slice to hold the retrieved events.
-	var events []Event
+	var events []tstrading.Event
 	// Query the Firestore collection "economic_events" for documents where the "Time" field is between the specified period.
 	// Firestore queries are inclusive, so we use >= for the start and <= for the end of the period.
 	// Note: Firestore will look for the struct field name "Time" by default, unless you provide firestore tags.
@@ -130,7 +135,7 @@ func (r *FirestoreEventRepository) GetByPeriod(ctx context.Context, period *Peri
 			return nil, tserr.Op(&tserr.OpArgs{Op: "iter.Next", Fn: "FirestoreEventRepository", Err: err})
 		}
 		// Create a new Event struct to hold the data from the Firestore document.
-		var ev Event
+		var ev tstrading.Event
 		// DataTo automatically maps the Firestore document fields back to your Event struct
 		if err := doc.DataTo(&ev); err != nil {
 			return nil, tserr.Op(&tserr.OpArgs{Op: "doc.DataTo", Fn: ev.Name, Err: err})
