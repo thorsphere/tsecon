@@ -41,6 +41,11 @@ POST_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$SERVICE_URL/event
              "estimate": 3.2,
              "previous": 3.3,
              "unit": "%",
+             "precision": 1,
+             "change": -0.2,
+             "change_pct": 0.06,
+             "surprise": -0.1,
+             "surprise_pct": 0.03,
              "impact": 3,
              "source": "US Bureau of Labor Statistics"
            }
