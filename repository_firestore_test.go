@@ -10,9 +10,11 @@ import (
 	"testing" // testing for writing unit tests in Go
 	"time"    // time for working with time and dates in tests
 
-	"github.com/thorsphere/tserr"         	// tserr for custom error handling in tests, allowing for better error messages and context when tests fail.
-	"github.com/thorsphere/tseventserver" 	// tseventserver is the package being tested, which contains the FirestoreEventRepository implementation.
-	"github.com/thorsphere/tstrading"		// tstrading for economic events
+	// lpstats for working with statistics
+	"github.com/thorsphere/lpstats"
+	"github.com/thorsphere/tserr"         // tserr for custom error handling in tests, allowing for better error messages and context when tests fail.
+	"github.com/thorsphere/tseventserver" // tseventserver is the package being tested, which contains the FirestoreEventRepository implementation.
+	"github.com/thorsphere/tstrading"     // tstrading for economic events
 )
 
 // tip is the help text shown when Firestore connectivity isn't set up.
@@ -41,41 +43,76 @@ and ensure your application default credentials are available.
 var (
 	// Define some sample events for testing purposes
 	evNfp *tstrading.Event = &tstrading.Event{
-		Name:     "Non-Farm Payrolls",
-		Time:     time.Date(2024, 7, 5, 8, 30, 0, 0, time.UTC),
-		Country:  "US",
-		Actual:   new(200.0),
-		Estimate: new(180.0),
-		Previous: new(150.0),
-		Unit:     "K",
-		Impact:   tstrading.ImpactHigh,
-		Source:   "Bureau of Labor Statistics",
+		Name:        "Non-Farm Payrolls",
+		Time:        time.Date(2024, 7, 5, 8, 30, 0, 0, time.UTC),
+		Country:     "US",
+		Currency:    nil,
+		Actual:      lpstats.PtrFloat(200.0),
+		Estimate:    lpstats.PtrFloat(180.0),
+		Previous:    lpstats.PtrFloat(150.0),
+		Unit:        lpstats.PtrStr("K"),
+		Precision:   0,
+		Change:      lpstats.PtrFloat(50.0),
+		ChangePct:   lpstats.PtrFloat(33.3),
+		Surprise:    lpstats.PtrFloat(-20.0),
+		SurprisePct: lpstats.PtrFloat(-11.1),
+		Impact:      tstrading.ImpactHigh,
+		Source:      "Bureau of Labor Statistics",
+	}
+	evCc *tstrading.Event = &tstrading.Event{
+		Name:        "Consumer Credit",
+		Time:        time.Date(2026, 6, 5, 8, 30, 0, 0, time.UTC),
+		Country:     "US",
+		Currency:    lpstats.PtrStr("USD"),
+		Actual:      lpstats.PtrFloat(20.73),
+		Estimate:    lpstats.PtrFloat(17.80),
+		Previous:    lpstats.PtrFloat(22.23),
+		Unit:        lpstats.PtrStr("B"),
+		Precision:   2,
+		Change:      lpstats.PtrFloat(-1.5),
+		ChangePct:   lpstats.PtrFloat(-6.7),
+		Surprise:    lpstats.PtrFloat(-2.9),
+		SurprisePct: lpstats.PtrFloat(-16.3),
+		Impact:      tstrading.ImpactHigh,
+		Source:      "Bureau of Labor Statistics",
 	}
 	evGdp24 *tstrading.Event = &tstrading.Event{
-		Name:     "GDP Growth Rate",
-		Time:     time.Date(2024, 7, 10, 8, 30, 0, 0, time.UTC),
-		Country:  "US",
-		Actual:   new(3.5),
-		Estimate: new(3.0),
-		Previous: new(2.8),
-		Unit:     "%",
-		Impact:   tstrading.ImpactMedium,
-		Source:   "Bureau of Economic Analysis",
+		Name:        "GDP Growth Rate",
+		Time:        time.Date(2024, 7, 10, 8, 30, 0, 0, time.UTC),
+		Country:     "US",
+		Currency:    nil,
+		Actual:      lpstats.PtrFloat(3.5),
+		Estimate:    lpstats.PtrFloat(3.0),
+		Previous:    lpstats.PtrFloat(2.8),
+		Unit:        lpstats.PtrStr("%"),
+		Precision:   1,
+		Change:      lpstats.PtrFloat(0.7),
+		ChangePct:   lpstats.PtrFloat(25.0),
+		Surprise:    lpstats.PtrFloat(-0.5),
+		SurprisePct: lpstats.PtrFloat(-16.7),
+		Impact:      tstrading.ImpactMedium,
+		Source:      "Bureau of Economic Analysis",
 	}
 	evGdp30 *tstrading.Event = &tstrading.Event{
-		Name:     "GDP Growth Rate",
-		Time:     time.Date(2030, 7, 10, 8, 30, 0, 0, time.UTC),
-		Country:  "US",
-		Actual:   nil,
-		Estimate: nil,
-		Previous: nil,
-		Unit:     "%",
-		Impact:   tstrading.ImpactLow,
-		Source:   "Bureau of Economic Analysis",
+		Name:        "GDP Growth Rate",
+		Time:        time.Date(2030, 7, 10, 8, 30, 0, 0, time.UTC),
+		Country:     "US",
+		Actual:      nil,
+		Estimate:    nil,
+		Previous:    nil,
+		Unit:        lpstats.PtrStr("%"),
+		Precision:   1,
+		Change:      nil,
+		ChangePct:   nil,
+		Surprise:    nil,
+		SurprisePct: nil,
+		Impact:      tstrading.ImpactLow,
+		Source:      "Bureau of Economic Analysis",
 	}
 	// Define a slice of events for testing purposes
 	evs []*tstrading.Event = []*tstrading.Event{
 		evNfp,
+		evCc,
 		evGdp24,
 		evGdp30,
 	}
