@@ -151,18 +151,45 @@ are updated automatically.
 ```json
 [
   {
-    "name": "US Core Inflation Rate",
+    "name": "Non-Farm Payrolls",
+    "description": "The non-farm payrolls index measures the number of jobs added or lost in the economy.",
     "time": "2026-05-15T12:30:00Z",
     "country": "US",
-    "actual": 3.1,
-    "estimate": 3.2,
-    "previous": 3.3,
-    "unit": "%",
+    "actual": 272.0,
+    "estimate": 180.0,
+    "previous": 236.0,
+    "unit": "K",
+    "precision": 1,
+    "change": 36.0,
+    "change_pct": 0.15,
+    "surprise": 92.0,
+    "surprise_pct": 0.51,
     "impact": 3,
-    "source": "US Bureau of Labor Statistics"
+    "source": "Bureau of Labor Statistics"
   }
 ]
 ```
+
+**Event fields**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | yes | Name of the economic event, e.g., "Non-Farm Payrolls", "GDP Growth Rate" |
+| `description` | string | no | Description of the economic event |
+| `time` | string | yes | Date and time of the event in RFC 3339 UTC format |
+| `country` | string | yes | ISO 3166-1 alpha-2 two-letter country code |
+| `currency` | string | no | Currency of the values, e.g., "USD", "EUR" |
+| `actual` | number | no | Actual value released |
+| `estimate` | number | no | Estimated/forecasted value |
+| `previous` | number | no | Previous period's value |
+| `unit` | string | no | Unit of measurement, e.g., "%", "K", "M", "B" |
+| `precision` | int | no | Number of decimal places for rounding |
+| `change` | number | no | Change from previous value |
+| `change_pct` | number | no | Percentage change from previous value |
+| `surprise` | number | no | Difference between actual and estimate |
+| `surprise_pct` | number | no | Percentage surprise relative to estimate |
+| `impact` | int | no | Impact level of the event (1-3) |
+| `source` | string | yes | Source of the data, e.g., "Bureau of Labor Statistics" |
 
 **Responses**
 
