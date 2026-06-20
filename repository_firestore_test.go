@@ -44,6 +44,7 @@ var (
 	// Define some sample events for testing purposes
 	evNfp *tstrading.Event = &tstrading.Event{
 		Name:        "Non-Farm Payrolls",
+		Description: "The non-farm payrolls index measures the payrolls of non-farm payrolls.",
 		Time:        time.Date(2024, 7, 5, 8, 30, 0, 0, time.UTC),
 		Country:     "US",
 		Currency:    nil,
@@ -61,6 +62,7 @@ var (
 	}
 	evCc *tstrading.Event = &tstrading.Event{
 		Name:        "Consumer Credit",
+		Description: "Consumer credit measures the credit of consumers.",
 		Time:        time.Date(2026, 6, 5, 8, 30, 0, 0, time.UTC),
 		Country:     "US",
 		Currency:    lpstats.PtrStr("USD"),
@@ -78,6 +80,7 @@ var (
 	}
 	evGdp24 *tstrading.Event = &tstrading.Event{
 		Name:        "GDP Growth Rate",
+		Description: "GDP growth rate measures the growth rate of the gross domestic product (GDP).",
 		Time:        time.Date(2024, 7, 10, 8, 30, 0, 0, time.UTC),
 		Country:     "US",
 		Currency:    nil,
@@ -95,6 +98,7 @@ var (
 	}
 	evGdp30 *tstrading.Event = &tstrading.Event{
 		Name:        "GDP Growth Rate",
+		Description: "GDP growth rate measures the growth rate of the gross domestic product (GDP).",
 		Time:        time.Date(2030, 7, 10, 8, 30, 0, 0, time.UTC),
 		Country:     "US",
 		Actual:      nil,

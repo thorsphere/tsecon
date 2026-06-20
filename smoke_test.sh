@@ -35,6 +35,7 @@ POST_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$SERVICE_URL/event
      -d '[
            {
              "name": "US Core Inflation Rate",
+             "description": "The core inflation rate measures the average annual inflation rate.",
              "time": "2026-05-15T12:30:00Z",
              "country": "US",
              "actual": 3.1,

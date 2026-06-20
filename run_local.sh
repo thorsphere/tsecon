@@ -106,12 +106,18 @@ curl -s -X POST "${API_URL}/events/ingest" \
     -d '[
         {
             "name": "Non-Farm Payrolls",
+            "description": "The non-farm payrolls index measures the payrolls of non-farm payrolls.",
             "time": "2024-07-05T08:30:00Z",
             "country": "US",
             "actual": 200.0,
             "estimate": 180.0,
             "previous": 150.0,
             "unit": "K",
+            "precision": 1,
+            "change": 50.0,
+            "change_pct": 0.3,
+            "surprise": -20.0,
+            "surprise_pct": -0.1,
             "impact": 3,
             "source": "Bureau of Labor Statistics"
         }
@@ -125,12 +131,18 @@ curl -s -X POST "${API_URL}/events/ingest" \
     -H "Authorization: Bearer ${API_TOKEN}" \
     -d '[{
         "name": "GDP Growth Rate",
+        "description": "GDP growth rate measures the growth rate of the gross domestic product (GDP).",
         "time": "2024-07-10T08:30:00Z",
         "country": "US",
         "actual": 3.5,
         "estimate": 3.0,
         "previous": 2.8,
         "unit": "%",
+        "precision": 1,
+        "change": 0.7,
+        "change_pct": 0.25,
+        "surprise": 0.5,
+        "surprise_pct": 0.14,
         "impact": 2,
         "source": "Bureau of Economic Analysis"
     }]' | jq || echo "Failed or jq not installed, raw output above."
