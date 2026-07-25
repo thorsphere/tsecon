@@ -2,18 +2,10 @@
 
 [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/thorsphere/tseventserver)](https://pkg.go.dev/mod/github.com/thorsphere/tseventserver)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/thorsphere/tseventserver)
-
-[![Go Report Card](https://goreportcard.com/badge/github.com/thorsphere/tseventserver)](https://goreportcard.com/report/github.com/thorsphere/tseventserver)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/thorsphere/tseventserver)
+![GitHub Top Language](https://img.shields.io/github/languages/top/thorsphere/tseventserver)
 [![CodeFactor](https://www.codefactor.io/repository/github/thorsphere/tseventserver/badge)](https://www.codefactor.io/repository/github/thorsphere/tseventserver)
 ![OSS Lifecycle](https://img.shields.io/osslifecycle/thorsphere/tseventserver)
-![Libraries.io dependency status for GitHub repo](https://img.shields.io/librariesio/github/thorsphere/tseventserver)
-
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/thorsphere/tseventserver)
-![GitHub last commit](https://img.shields.io/github/last-commit/thorsphere/tseventserver)
-![GitHub commit activity](https://img.shields.io/github/commit-activity/m/thorsphere/tseventserver)
-![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/thorsphere/tseventserver)
-![GitHub Top Language](https://img.shields.io/github/languages/top/thorsphere/tseventserver)
-![GitHub](https://img.shields.io/github/license/thorsphere/tseventserver)
 
 ---
 
@@ -294,6 +286,30 @@ it is available in two places:
 
 ---
 
-## License
+## Documentation & Resources
 
-GNU Affero General Public License v3.0 – see [LICENSE](LICENSE) for details.
+- [Go Package Documentation](https://pkg.go.dev/github.com/thorsphere/tseventserver) — Complete API reference
+- [Open Source Insights](https://deps.dev/go/github.com%2Fthorsphere%2Ftseventserver) — Dependency analysis
+
+---
+
+## ⚖️ License & Commercial Usage
+
+Copyright (c) 2026 thorsphere. All rights reserved.
+
+This project is licensed under the **Functional Source License v1.1 (FSL-1.1-ALv2)**. 
+
+* The use, modification, and redistribution of this Go package is completely free for private, educational, non-commercial, and internal purposes. 
+* If you are a company or institution looking to use this package in a commercial product, service, or business environment, you must secure a commercial license.
+* Each version of this software automatically converts to the fully open-source Apache License, Version 2.0 on the second anniversary of its release.
+
+For full details, please see the [LICENSE](LICENSE) file.
+
+### 💼 Commercial Licensing & Inquiries
+
+To purchase a commercial license or discuss support options, please reach out directly:
+
+* 📩 **Contact:** business at thorsphere dot com
+* 💬 **Response Time:** Usually within a couple of business days.
+
+*Please include your company name and a brief overview of your use case so I can provide the right licensing details.*
