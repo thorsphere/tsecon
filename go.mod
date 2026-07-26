@@ -4,10 +4,10 @@ go 1.26
 
 require (
 	cloud.google.com/go/firestore v1.24.0
-	github.com/thorsphere/lpstats v1.5.4
-	github.com/thorsphere/tserr v1.20.4
-	github.com/thorsphere/tslog v1.3.3
-	github.com/thorsphere/tstrading v1.1.4
+	github.com/thorsphere/lpstats v1.6.0
+	github.com/thorsphere/tserr v1.21.0
+	github.com/thorsphere/tslog v1.4.0
+	github.com/thorsphere/tstrading v1.2.0
 	google.golang.org/api v0.290.0
 )
 
@@ -24,8 +24,8 @@ require (
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.19 // indirect
 	github.com/googleapis/gax-go/v2 v2.23.0 // indirect
-	github.com/thorsphere/tsfio v1.8.1 // indirect
-	github.com/thorsphere/tstable v1.2.2 // indirect
+	github.com/thorsphere/tsfio v1.9.0 // indirect
+	github.com/thorsphere/tstable v1.3.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.69.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.69.0 // indirect
