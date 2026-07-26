@@ -303,7 +303,7 @@ This project is licensed under the **Functional Source License v1.1 (FSL-1.1-ALv
 * If you are a company or institution looking to use this package in a commercial product, service, or business environment, you must secure a commercial license.
 * Each version of this software automatically converts to the fully open-source Apache License, Version 2.0 on the second anniversary of its release.
 
-For full details, please see the [LICENSE](LICENSE) file.
+For full details, please see the [LICENSE](LICENSE.md) file.
 
 ### 💼 Commercial Licensing & Inquiries
 
